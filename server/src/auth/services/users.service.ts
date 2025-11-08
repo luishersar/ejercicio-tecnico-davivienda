@@ -1,19 +1,33 @@
 import { Injectable } from '@nestjs/common';
+import { InjectEntityManager } from '@nestjs/typeorm';
+import { User } from 'src/users/entities/user.entity';
+import { EntityManager } from 'typeorm';
 
 @Injectable()
 export class UsersService {
-  private users = [
-    { id: 1, email: 'demo@example.com', password: 'secret123', name: 'Demo' },
-  ];
+  constructor(
+    @InjectEntityManager()
+    private readonly entityManager: EntityManager,
+  ) {}
 
-  validateUser(email: string, password: string) {
-    const u = this.users.find(
-      (x) => x.email === email && x.password === password,
-    );
+  async validateUser(email: string, password: string) {
+    const u = await this.entityManager.findOne(User, {
+      where: {
+        email,
+        password,
+      },
+    });
+
     return u ? { id: u.id, email: u.email, name: u.name } : null;
   }
 
-  findById(id: number) {
-    return this.users.find((u) => u.id === id) ?? null;
+  async findById(id: number) {
+    const u = await this.entityManager.findOne(User, {
+      where: {
+        id: id.toString(),
+      },
+    });
+
+    return u;
   }
 }

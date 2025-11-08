@@ -10,11 +10,11 @@ export class AuthService {
 
   constructor(private users: UsersService) {}
 
-  login(dto: LoginDto) {
-    const user = this.users.validateUser(dto.email, dto.password);
+  async login(dto: LoginDto) {
+    const user = await this.users.validateUser(dto.email, dto.password);
     if (!user) return { ok: false, message: 'Invalid credentials' };
 
-    const access = this.signAccessToken(user.id, user.email);
+    const access = this.signAccessToken(parseInt(user.id), user.email);
 
     return {
       ok: true,
