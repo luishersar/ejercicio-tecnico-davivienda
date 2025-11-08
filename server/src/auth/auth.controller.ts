@@ -13,7 +13,9 @@ import { AuthService } from './auth.service';
 import { LoginDto } from './dtos/login.dto';
 import { Public } from './decorators/public.decorator';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   constructor(private auth: AuthService) {}
