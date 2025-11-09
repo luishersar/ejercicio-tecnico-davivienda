@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import * as jwt from 'jsonwebtoken';
 import { LoginDto } from './dtos/login.dto';
 import { UsersService } from './services/users.service';
@@ -6,13 +6,15 @@ import { UsersService } from './services/users.service';
 @Injectable()
 export class AuthService {
   private accessSecret = process.env.JWT_ACCESS_SECRET!;
-  private accessTtl = Number(process.env.ACCESS_TTL_SEC || 900);
+  private accessTtl = Number(process.env.ACCESS_TTL_SEC || 10);
 
   constructor(private users: UsersService) {}
 
   async login(dto: LoginDto) {
     const user = await this.users.validateUser(dto.email, dto.password);
-    if (!user) return { ok: false, message: 'Invalid credentials' };
+    if (!user) {
+      throw new BadRequestException('Credenciales Incorrectas');
+    }
 
     const access = this.signAccessToken(parseInt(user.id), user.email);
 

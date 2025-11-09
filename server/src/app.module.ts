@@ -4,6 +4,7 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { config as dotenvConfig } from 'dotenv';
 import { UsersModule } from './users/users.module';
+import { SurveysModule } from './surveys/surveys.module';
 dotenvConfig({ path: './.env' });
 
 @Module({
@@ -26,6 +27,7 @@ dotenvConfig({ path: './.env' });
         rejectUnauthorized: false,
       },
     }),
+    SurveysModule,
     UsersModule,
   ],
 })

@@ -18,18 +18,18 @@ import { ApiTags } from '@nestjs/swagger';
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private auth: AuthService) {}
+  constructor(private authService: AuthService) {}
 
   @Public()
   @Post('login')
   @HttpCode(200)
   login(@Body() dto: LoginDto) {
-    return this.auth.login(dto);
+    return this.authService.login(dto);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Get('me')
+  @UseGuards(JwtAuthGuard)
   me(@Req() req: Request) {
-    return { ok: true, user: req.user };
+    return req.user;
   }
 }
