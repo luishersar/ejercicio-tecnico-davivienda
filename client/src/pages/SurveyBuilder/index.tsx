@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Button,
@@ -14,8 +14,16 @@ import {
   Paper,
   Divider,
   Stack,
+  CircularProgress,
+  Alert,
 } from '@mui/material';
 import { Add, Delete, ArrowUpward, ArrowDownward } from '@mui/icons-material';
+import { useMutation } from '@tanstack/react-query';
+import { createSurvey } from '../../http/survey';
+import { useAuth } from "../../context/AuthContext";
+import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
+
 
 enum QuestionType {
   OPEN = 'open',
@@ -47,24 +55,36 @@ interface Survey {
 
 interface SurveyFormProps {
   initialData?: Survey;
-  onSubmit?: (data: any) => void;
+  onSubmit?: (data: any) => Promise<any>;
   onCancel?: () => void;
+  onSuccess?: (data: any) => void;
+  onError?: (error: any) => void;
 }
 
-export default function SurveyForm({ initialData, onSubmit, onCancel }: SurveyFormProps) {
-  const [survey, setSurvey] = useState<Survey>(initialData || {
+export default function SurveyForm() {
+  const [survey, setSurvey] = useState<Survey>({
     title: '',
     description: '',
     questions: [],
   });
 
-  const isEditMode = !!initialData?.id;
+  const navigate = useNavigate();
+  const { token } = useAuth()
 
-  useEffect(() => {
-    if (initialData) {
-      setSurvey(initialData);
-    }
-  }, [initialData]);
+  const mutation = useMutation({
+    mutationFn: async (payload: any) => {await createSurvey(payload, token!)},
+      onSuccess: () => {
+          toast.success("Encuesta creada exitosamente", {
+            position: "top-center",
+          });
+          navigate("/dashboard");
+        },
+      onError: () => {
+          toast.error("Error al crear la encuesta", {
+            position: "top-center",
+          });
+        },
+      });
 
   const addQuestion = () => {
     const newQuestion: Question = {
@@ -134,40 +154,34 @@ export default function SurveyForm({ initialData, onSubmit, onCancel }: SurveyFo
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    const payload = {
-      ...(isEditMode && { id: survey.id }),
+    
+    const payload: any = {
       title: survey.title,
-      description: survey.description,
+      description: survey.description || undefined,
       questions: survey.questions.map((q) => {
         const question: any = {
           label: q.label,
-          type: q.type,
+          type: q.type, 
         };
         
-        if (typeof q.id === 'number') {
-          question.id = q.id;
-        }
-        
-        if (needsOptions(q.type) && q.options) {
-          question.options = q.options.map((opt) => {
-            const option: any = { label: opt.label };
-            if (opt.id) {
-              option.id = opt.id;
-            }
-            return option;
-          });
+        if (needsOptions(q.type)) {
+          if (q.options && q.options.length > 0) {
+            question.options = q.options.map((opt) => {
+              const option: any = { label: opt.label };
+              return option;
+            });
+          } else {
+            question.options = [];
+          }
         }
         
         return question;
       }),
     };
+
+    console.log(payload, "payload")
     
-    if (onSubmit) {
-      onSubmit(payload);
-    } else {
-      alert('Encuesta guardada! Ver consola para el payload');
-    }
+    mutation.mutate(payload);
   };
 
   const getTypeLabel = (type: QuestionType) => {
@@ -189,11 +203,23 @@ export default function SurveyForm({ initialData, onSubmit, onCancel }: SurveyFo
     <Box sx={{ maxWidth: 900, mx: 'auto', p: 3 }}>
       <Paper elevation={3} sx={{ p: 4 }}>
         <Typography variant="h4" fontWeight={700} mb={3}>
-          {isEditMode ? 'Editar Encuesta' : 'Crear Nueva Encuesta'}
+          {'Crear Nueva Encuesta'}
         </Typography>
 
+        {/* Mensajes de éxito y error */}
+        {mutation.isSuccess && (
+          <Alert severity="success" sx={{ mb: 3 }} onClose={() => mutation.reset()}>
+            ¡Encuesta guardada exitosamente!
+          </Alert>
+        )}
+        
+        {mutation.isError && (
+          <Alert severity="error" sx={{ mb: 3 }} onClose={() => mutation.reset()}>
+            Error al guardar la encuesta: {mutation.error?.message || 'Intenta nuevamente'}
+          </Alert>
+        )}
+
         <Box component="form" onSubmit={handleSubmit}>
-          {/* Información básica */}
           <Stack spacing={3} mb={4}>
             <TextField
               label="Título de la encuesta"
@@ -202,6 +228,7 @@ export default function SurveyForm({ initialData, onSubmit, onCancel }: SurveyFo
               value={survey.title}
               onChange={(e) => setSurvey({ ...survey, title: e.target.value })}
               placeholder="Ej: Encuesta de Satisfacción del Cliente"
+              disabled={mutation.isPending}
             />
             
             <TextField
@@ -212,12 +239,12 @@ export default function SurveyForm({ initialData, onSubmit, onCancel }: SurveyFo
               value={survey.description}
               onChange={(e) => setSurvey({ ...survey, description: e.target.value })}
               placeholder="Describe el propósito de tu encuesta..."
+              disabled={mutation.isPending}
             />
           </Stack>
 
           <Divider sx={{ my: 3 }} />
 
-          {/* Preguntas */}
           <Typography variant="h6" fontWeight={600} mb={2}>
             Preguntas
           </Typography>
@@ -234,7 +261,7 @@ export default function SurveyForm({ initialData, onSubmit, onCancel }: SurveyFo
                     <IconButton 
                       size="small" 
                       onClick={() => moveQuestionUp(qIndex)}
-                      disabled={qIndex === 0}
+                      disabled={qIndex === 0 || mutation.isPending}
                       title="Mover arriba"
                     >
                       <ArrowUpward />
@@ -242,7 +269,7 @@ export default function SurveyForm({ initialData, onSubmit, onCancel }: SurveyFo
                     <IconButton 
                       size="small" 
                       onClick={() => moveQuestionDown(qIndex)}
-                      disabled={qIndex === survey.questions.length - 1}
+                      disabled={qIndex === survey.questions.length - 1 || mutation.isPending}
                       title="Mover abajo"
                     >
                       <ArrowDownward />
@@ -251,6 +278,7 @@ export default function SurveyForm({ initialData, onSubmit, onCancel }: SurveyFo
                       size="small" 
                       color="error" 
                       onClick={() => deleteQuestion(qIndex)}
+                      disabled={mutation.isPending}
                       title="Eliminar pregunta"
                     >
                       <Delete />
@@ -266,9 +294,10 @@ export default function SurveyForm({ initialData, onSubmit, onCancel }: SurveyFo
                     value={question.label}
                     onChange={(e) => updateQuestion(qIndex, 'label', e.target.value)}
                     placeholder="Escribe tu pregunta aquí"
+                    disabled={mutation.isPending}
                   />
 
-                  <FormControl fullWidth>
+                  <FormControl fullWidth disabled={mutation.isPending}>
                     <InputLabel>Tipo de pregunta</InputLabel>
                     <Select
                       value={question.type}
@@ -286,7 +315,6 @@ export default function SurveyForm({ initialData, onSubmit, onCancel }: SurveyFo
                     </Select>
                   </FormControl>
 
-                  {/* Opciones */}
                   {needsOptions(question.type) && (
                     <Box sx={{ pl: 2, borderLeft: '3px solid #1976d2', bgcolor: '#e3f2fd', p: 2, borderRadius: 1 }}>
                       <Typography variant="subtitle2" fontWeight={600} mb={1}>
@@ -301,11 +329,13 @@ export default function SurveyForm({ initialData, onSubmit, onCancel }: SurveyFo
                             placeholder={`Opción ${oIndex + 1}`}
                             value={option.label}
                             onChange={(e) => updateOption(qIndex, oIndex, e.target.value)}
+                            disabled={mutation.isPending}
                           />
                           <IconButton 
                             size="small" 
                             color="error"
                             onClick={() => deleteOption(qIndex, oIndex)}
+                            disabled={mutation.isPending}
                             title="Eliminar opción"
                           >
                             <Delete />
@@ -318,6 +348,7 @@ export default function SurveyForm({ initialData, onSubmit, onCancel }: SurveyFo
                         startIcon={<Add />}
                         onClick={() => addOption(qIndex)}
                         sx={{ mt: 1 }}
+                        disabled={mutation.isPending}
                       >
                         Agregar opción
                       </Button>
@@ -340,27 +371,29 @@ export default function SurveyForm({ initialData, onSubmit, onCancel }: SurveyFo
             onClick={addQuestion}
             fullWidth
             sx={{ mb: 3 }}
+            disabled={mutation.isPending}
           >
             Agregar Pregunta
           </Button>
 
           <Divider sx={{ my: 3 }} />
 
-          {/* Botones de acción */}
           <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
             <Button 
               variant="outlined" 
               color="secondary"
-              onClick={onCancel}
+              //onClick={onCancel}
+              disabled={mutation.isPending}
             >
               Cancelar
             </Button>
             <Button 
               variant="contained" 
               type="submit"
-              disabled={!survey.title || survey.questions.length === 0}
+              disabled={!survey.title || survey.questions.length === 0 || mutation.isPending}
+              startIcon={mutation.isPending && <CircularProgress size={20} color="inherit" />}
             >
-              {isEditMode ? 'Guardar Cambios' : 'Crear Encuesta'}
+              {mutation.isPending ? 'Guardando...' : 'Crear Encuesta'}
             </Button>
           </Box>
         </Box>

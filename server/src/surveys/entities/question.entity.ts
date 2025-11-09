@@ -8,6 +8,7 @@ import {
 } from 'typeorm';
 import { Survey } from './survey.entity';
 import { QuestionOption } from './question-option.entity';
+import { Answer } from './answer.entity';
 
 export enum QuestionType {
   OPEN = 'open',
@@ -40,4 +41,7 @@ export class Question {
     cascade: true,
   })
   options: QuestionOption[];
+
+  @OneToMany(() => Answer, (answer) => answer.question)
+  answers: Answer[];
 }

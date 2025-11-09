@@ -1,4 +1,10 @@
-import { IsString, IsOptional, IsArray, ValidateNested } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsArray,
+  ValidateNested,
+  IsEnum,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { QuestionType } from '../entities/question.entity';
 import { ApiProperty } from '@nestjs/swagger';
@@ -15,11 +21,13 @@ export class CreateQuestionDto {
   label: string;
 
   @ApiProperty()
+  @IsEnum(QuestionType)
   type: QuestionType;
 
   @ApiProperty()
   @IsArray()
   @ValidateNested({ each: true })
+  @IsOptional()
   @Type(() => CreateQuestionOptionDto)
   options?: CreateQuestionOptionDto[];
 }

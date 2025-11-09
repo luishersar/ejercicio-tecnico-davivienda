@@ -61,6 +61,7 @@ export default function App() {
               <SignUp />
           </GuestRoute>
           } />
+
       </Routes>
   );
 }

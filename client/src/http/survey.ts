@@ -1,3 +1,4 @@
+import { CreateSurveyPayload } from "../dtos/create-survey.dto";
 import { publicClient } from "../http/publicClient"; 
 import { http } from "./client";
 
@@ -31,6 +32,16 @@ export async function getAllSurveys(token: string) {
   return res.data;
 }
 
+export async function createSurvey(payload: CreateSurveyPayload, token: string) {
+  const res = await http.post('/surveys', payload, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  return res.data;
+}
+
 export const updateSurvey = async (id: string, payload: any, token: string) => {
   const res = await http.put(`/surveys/${id}`, payload, {
     headers: {
@@ -51,3 +62,25 @@ export const softDeleteSurvey = async (id: number, token: string) => {
 
   return data;
 };
+
+export async function submitSurveyResponse(payload: any) {
+  const res = await publicClient.post('/survey-responses', payload);
+  return res.data;
+}
+
+export async function getSurveyResponses(surveyId: number) {
+  const res = await publicClient.get(`/survey-responses/survey/${surveyId}`);
+  return res.data;
+}
+
+export async function getResponseById(responseId: string) {
+  const res = await publicClient.get(`/survey-responses/${responseId}`);
+  return res.data;
+}
+
+export async function deleteAllSurveyResponses(surveyId: number) {
+  const res = await publicClient.delete(
+    `/survey-responses/survey/${surveyId}`,
+  );
+  return res.data;
+}

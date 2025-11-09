@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { getSurveyById } from "../../http/survey.ts";
+import { getSurveyById, submitSurveyResponse } from "../../http/survey.ts";
 import {
   Box,
   Typography,
@@ -22,13 +22,14 @@ import {
   FormHelperText,
 } from "@mui/material";
 import toast from "react-hot-toast";
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, set } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { 
   createDynamicSurveyValidation, 
   getInitialValues, 
   transformToApiFormat,
 } from '../../yup/index.ts';
+import { useState } from "react";
 
 enum QuestionType {
   OPEN = 'open',
@@ -40,6 +41,8 @@ enum QuestionType {
 export default function SurveyPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+
+  const [success, SetSucces] = useState(false)
 
   const { data, isLoading } = useQuery({
     queryKey: ["survey", id],
@@ -58,14 +61,13 @@ export default function SurveyPage() {
 
   const submitMutation = useMutation({
     mutationFn: async (payload: any) => {
-      console.log("Respuestas enviadas:", payload);
-      return Promise.resolve();
+      submitSurveyResponse(payload)
     },
     onSuccess: () => {
       toast.success("¡Respuestas enviadas exitosamente!", {
         position: "top-center",
       });
-      navigate('/success');
+      SetSucces(true)
     },
     onError: () => {
       toast.error("Error al enviar las respuestas", {
@@ -129,7 +131,29 @@ export default function SurveyPage() {
   }
 
   return (
-    <Box sx={{ maxWidth: 700, mx: "auto", p: 3, mb: 4 }}>
+
+    
+    (success ? 
+    <Box
+      sx={{
+        maxWidth: 600,
+        mx: "auto",
+        mt: 8,
+        textAlign: "center",
+        p: 4,
+        borderRadius: 2,
+        boxShadow: 3,
+        backgroundColor: "white"
+      }}
+    >
+      <Typography variant="h4" sx={{ mb: 3 }}>
+        La respuesta fue enviada exitosamente 🎉
+      </Typography>
+
+      <Button variant="contained" onClick={() => navigate("/")}>
+        Volver al inicio
+      </Button>
+    </Box> : <Box sx={{ maxWidth: 700, mx: "auto", p: 3, mb: 4 }}>
       <Paper elevation={3} sx={{ p: 4 }}>
         <Box sx={{ mb: 4 }}>
           <Typography variant="h3" fontWeight={700} gutterBottom>
@@ -199,7 +223,6 @@ export default function SurveyPage() {
                                   { value: 5, label: '5' },
                                   { value: 10, label: '10' },
                                 ]}
-                                valueLabelDisplay="on"
                               />
                               <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
                                 <Typography variant="caption" color="text.secondary">
@@ -303,6 +326,6 @@ export default function SurveyPage() {
           </Box>
         </form>
       </Paper>
-    </Box>
+    </Box> )
   );
 }
