@@ -19,10 +19,16 @@ import {
   Alert,
   Stack,
   Chip,
+  FormHelperText,
 } from "@mui/material";
-import { useState } from "react";
-import { CheckCircle } from "@mui/icons-material";
 import toast from "react-hot-toast";
+import { useForm, Controller } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import { 
+  createDynamicSurveyValidation, 
+  getInitialValues, 
+  transformToApiFormat,
+} from '../../yup/index.ts';
 
 enum QuestionType {
   OPEN = 'open',
@@ -34,8 +40,6 @@ enum QuestionType {
 export default function SurveyPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [answers, setAnswers] = useState<Record<number, any>>({});
-  const [submitted, setSubmitted] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["survey", id],
@@ -43,15 +47,25 @@ export default function SurveyPage() {
     enabled: !!id,
   });
 
+  const {
+    control,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    defaultValues: data ? getInitialValues(data) : {},
+    resolver: data ? yupResolver(createDynamicSurveyValidation(data)) : undefined,
+  });
+
   const submitMutation = useMutation({
     mutationFn: async (payload: any) => {
+      console.log("Respuestas enviadas:", payload);
       return Promise.resolve();
     },
     onSuccess: () => {
-      setSubmitted(true);
       toast.success("¡Respuestas enviadas exitosamente!", {
         position: "top-center",
       });
+      navigate('/success');
     },
     onError: () => {
       toast.error("Error al enviar las respuestas", {
@@ -59,6 +73,14 @@ export default function SurveyPage() {
       });
     },
   });
+
+  const onSubmit = (values: any) => {
+    const payload = {
+      surveyId: id,
+      responses: transformToApiFormat(values, data),
+    };
+    submitMutation.mutate(payload);
+  };
 
   if (isLoading) {
     return (
@@ -75,42 +97,6 @@ export default function SurveyPage() {
       </Box>
     );
   }
-
-  const handleChange = (questionId: number, value: any) => {
-    setAnswers((prev) => ({ ...prev, [questionId]: value }));
-  };
-
-  const handleCheckboxChange = (questionId: number, optionLabel: string, checked: boolean) => {
-    setAnswers((prev) => {
-      const current = prev[questionId] || [];
-      if (checked) {
-        return { ...prev, [questionId]: [...current, optionLabel] };
-      } else {
-        return { ...prev, [questionId]: current.filter((item: string) => item !== optionLabel) };
-      }
-    });
-  };
-
-  const handleSubmit = () => {
-    const unanswered = data.questions.filter((q: any) => !answers[q.id]);
-    
-    if (unanswered.length > 0) {
-      toast.error("Por favor responde todas las preguntas", {
-        position: "top-center",
-      });
-      return;
-    }
-
-    const payload = {
-      surveyId: id,
-      responses: Object.entries(answers).map(([questionId, answer]) => ({
-        questionId: Number(questionId),
-        answer,
-      })),
-    };
-
-    submitMutation.mutate(payload);
-  };
 
   if (!data.active) {
     return (
@@ -142,29 +128,9 @@ export default function SurveyPage() {
     );
   }
 
-  if (submitted) {
-    return (
-      <Box sx={{ maxWidth: 600, mx: "auto", mt: 8 }}>
-        <Paper elevation={3} sx={{ p: 6, textAlign: "center" }}>
-          <CheckCircle sx={{ fontSize: 80, color: "success.main", mb: 2 }} />
-          <Typography variant="h4" fontWeight={600} mb={2}>
-            ¡Gracias por tu participación!
-          </Typography>
-          <Typography variant="body1" color="text.secondary" mb={3}>
-            Tus respuestas han sido registradas exitosamente.
-          </Typography>
-          <Button variant="contained" onClick={() => navigate("/")}>
-            Volver al inicio
-          </Button>
-        </Paper>
-      </Box>
-    );
-  }
-
   return (
     <Box sx={{ maxWidth: 700, mx: "auto", p: 3, mb: 4 }}>
       <Paper elevation={3} sx={{ p: 4 }}>
-        {/* Header */}
         <Box sx={{ mb: 4 }}>
           <Typography variant="h3" fontWeight={700} gutterBottom>
             {data.title}
@@ -181,115 +147,161 @@ export default function SurveyPage() {
           />
         </Box>
 
-        {/* Preguntas */}
-        <Stack spacing={3}>
-          {data.questions.map((q: any, index: number) => (
-            <Card key={q.id} variant="outlined" sx={{ bgcolor: "#fafafa" }}>
-              <CardContent>
-                <Typography variant="h6" fontWeight={600} mb={2}>
-                  {index + 1}. {q.label}
-                  <Typography component="span" color="error" ml={0.5}>
-                    *
-                  </Typography>
-                </Typography>
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <Stack spacing={3}>
+            {data.questions.map((q: any, index: number) => {
+              const fieldName = `question_${q.id}`;
+              const hasError = !!errors[fieldName];
+              const errorMessage = errors[fieldName]?.message as string;
 
-                {/* Pregunta abierta */}
-                {q.type === QuestionType.OPEN && (
-                  <TextField
-                    fullWidth
-                    multiline
-                    rows={3}
-                    placeholder="Escribe tu respuesta aquí..."
-                    value={answers[q.id] || ""}
-                    onChange={(e) => handleChange(q.id, e.target.value)}
-                  />
-                )}
-
-                {/* Escala numérica */}
-                {q.type === QuestionType.SCALE && (
-                  <Box sx={{ px: 2 }}>
-                    <Slider
-                      min={1}
-                      max={10}
-                      step={1}
-                      marks={[
-                        { value: 1, label: '1' },
-                        { value: 5, label: '5' },
-                        { value: 10, label: '10' },
-                      ]}
-                      value={answers[q.id] || 5}
-                      onChange={(_, value) => handleChange(q.id, value)}
-                      valueLabelDisplay="on"
-                    />
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
-                      <Typography variant="caption" color="text.secondary">
-                        Nada probable
+              return (
+                <Card key={q.id} variant="outlined" sx={{ bgcolor: "#fafafa" }}>
+                  <CardContent>
+                    <Typography variant="h6" fontWeight={600} mb={2}>
+                      {index + 1}. {q.label}
+                      <Typography component="span" color="error" ml={0.5}>
+                        *
                       </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        Muy probable
-                      </Typography>
-                    </Box>
-                  </Box>
-                )}
+                    </Typography>
 
-                {/* Opción múltiple (una respuesta) */}
-                {q.type === QuestionType.MULTIPLE_CHOICE_ONE_ANSWER && (
-                  <RadioGroup
-                    value={answers[q.id] ?? ""}
-                    onChange={(e) => handleChange(q.id, e.target.value)}
-                  >
-                    {q.options?.map((o: any) => (
-                      <FormControlLabel
-                        key={o.id}
-                        value={o.label}
-                        control={<Radio />}
-                        label={o.label}
-                      />
-                    ))}
-                  </RadioGroup>
-                )}
-
-                {/* Opción múltiple (múltiples respuestas) */}
-                {q.type === QuestionType.MULTIPLE_CHOICE_MULTIPLE_ANSWER && (
-                  <FormGroup>
-                    {q.options?.map((o: any) => (
-                      <FormControlLabel
-                        key={o.id}
-                        control={
-                          <Checkbox
-                            checked={(answers[q.id] || []).includes(o.label)}
-                            onChange={(e) =>
-                              handleCheckboxChange(q.id, o.label, e.target.checked)
-                            }
+                    {q.type === QuestionType.OPEN && (
+                      <Controller
+                        name={fieldName}
+                        control={control}
+                        render={({ field }) => (
+                          <TextField
+                            {...field}
+                            fullWidth
+                            multiline
+                            rows={3}
+                            placeholder="Escribe tu respuesta aquí..."
+                            error={hasError}
+                            helperText={errorMessage}
                           />
-                        }
-                        label={o.label}
+                        )}
                       />
-                    ))}
-                  </FormGroup>
-                )}
-              </CardContent>
-            </Card>
-          ))}
-        </Stack>
+                    )}
 
-        {/* Botón de envío */}
-        <Box sx={{ mt: 4, display: "flex", justifyContent: "flex-end", gap: 2 }}>
-          <Button
-            variant="outlined"
-            onClick={() => navigate("/")}
-          >
-            Cancelar
-          </Button>
-          <Button
-            variant="contained"
-            size="large"
-            onClick={handleSubmit}
-            disabled={submitMutation.isPending}
-          >
-            {submitMutation.isPending ? "Enviando..." : "Enviar respuestas"}
-          </Button>
-        </Box>
+                    {q.type === QuestionType.SCALE && (
+                      <Controller
+                        name={fieldName}
+                        control={control}
+                        render={({ field }) => (
+                          <Box>
+                            <Box sx={{ px: 2 }}>
+                              <Slider
+                                {...field}
+                                min={1}
+                                max={10}
+                                step={1}
+                                marks={[
+                                  { value: 1, label: '1' },
+                                  { value: 5, label: '5' },
+                                  { value: 10, label: '10' },
+                                ]}
+                                valueLabelDisplay="on"
+                              />
+                              <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
+                                <Typography variant="caption" color="text.secondary">
+                                  Nada probable
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                  Muy probable
+                                </Typography>
+                              </Box>
+                            </Box>
+                            {hasError && (
+                              <FormHelperText error>{errorMessage}</FormHelperText>
+                            )}
+                          </Box>
+                        )}
+                      />
+                    )}
+
+                    {q.type === QuestionType.MULTIPLE_CHOICE_ONE_ANSWER && (
+                      <Controller
+                        name={fieldName}
+                        control={control}
+                        render={({ field }) => (
+                          <Box>
+                            <RadioGroup {...field}>
+                              {q.options?.map((o: any) => (
+                                <FormControlLabel
+                                  key={o.id}
+                                  value={o.label}
+                                  control={<Radio />}
+                                  label={o.label}
+                                />
+                              ))}
+                            </RadioGroup>
+                            {hasError && (
+                              <FormHelperText error>{errorMessage}</FormHelperText>
+                            )}
+                          </Box>
+                        )}
+                      />
+                    )}
+
+                    {q.type === QuestionType.MULTIPLE_CHOICE_MULTIPLE_ANSWER && (
+                      <Controller
+                        name={fieldName}
+                        control={control}
+                        render={({ field }) => (
+                          <Box>
+                            <FormGroup>
+                              {q.options?.map((o: any) => (
+                                <FormControlLabel
+                                  key={o.id}
+                                  control={
+                                    <Checkbox
+                                      checked={field.value?.includes(o.label) || false}
+                                      onChange={(e) => {
+                                        const values = field.value || [];
+                                        if (e.target.checked) {
+                                          field.onChange([...values, o.label]);
+                                        } else {
+                                          field.onChange(
+                                            values.filter((v: string) => v !== o.label)
+                                          );
+                                        }
+                                      }}
+                                    />
+                                  }
+                                  label={o.label}
+                                />
+                              ))}
+                            </FormGroup>
+                            {hasError && (
+                              <FormHelperText error>{errorMessage}</FormHelperText>
+                            )}
+                          </Box>
+                        )}
+                      />
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </Stack>
+
+          <Box sx={{ mt: 4, display: "flex", justifyContent: "flex-end", gap: 2 }}>
+            <Button
+              variant="outlined"
+              onClick={() => navigate("/")}
+              disabled={isSubmitting || submitMutation.isPending}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              variant="contained"
+              size="large"
+              disabled={isSubmitting || submitMutation.isPending}
+            >
+              {isSubmitting || submitMutation.isPending ? "Enviando..." : "Enviar respuestas"}
+            </Button>
+          </Box>
+        </form>
       </Paper>
     </Box>
   );
