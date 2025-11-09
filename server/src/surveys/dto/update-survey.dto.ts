@@ -1,4 +1,3 @@
-// update-survey.dto.ts
 import {
   IsString,
   IsOptional,

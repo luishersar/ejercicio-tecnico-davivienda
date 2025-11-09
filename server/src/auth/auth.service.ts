@@ -2,6 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import * as jwt from 'jsonwebtoken';
 import { LoginDto } from './dtos/login.dto';
 import { UsersService } from './services/users.service';
+import { SignUpDto } from './dtos/signup.dto';
 
 @Injectable()
 export class AuthService {
@@ -29,5 +30,27 @@ export class AuthService {
     return jwt.sign({ sub, email }, this.accessSecret, {
       expiresIn: this.accessTtl,
     });
+  }
+
+  async signUp(dto: SignUpDto) {
+    const user = await this.users.validateExistingUser(dto.email);
+
+    if (user) {
+      throw new BadRequestException('Ya Existe un Usuario con ese Email');
+    }
+
+    const newUser = await this.users.createUser(
+      dto.email,
+      dto.password,
+      dto.name,
+    );
+
+    const access = this.signAccessToken(parseInt(newUser.id), newUser.email);
+
+    return {
+      ok: true,
+      accessToken: access,
+      user: { id: newUser.id, email: newUser.email, name: newUser.name },
+    };
   }
 }

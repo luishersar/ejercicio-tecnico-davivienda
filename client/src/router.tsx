@@ -5,15 +5,30 @@ import { PrivateRoute } from "./components/PrivateRoute";
 import { GuestRoute } from "./context/GuestRoute";
 import PublicSurvey from "./pages/PublicSurvey";
 import SurveyEditPage from "./pages/SurveyEditPage";
+import LandingPage from "./pages/LandingPage";
+import SurveyBuilder from "./pages/SurveyBuilder";
 
 export default function App() {
   return (
       <Routes>
+
+         <Route path="/" element={<LandingPage />} />
+
         <Route path="/login" element={
            <GuestRoute>
               <Login />
           </GuestRoute>
           } />
+
+
+        <Route
+          path="/surveys/new"
+          element={
+            <PrivateRoute>
+              <SurveyBuilder/>
+            </PrivateRoute>
+          }
+        />
 
         <Route
           path="/dashboard"

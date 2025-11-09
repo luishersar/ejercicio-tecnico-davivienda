@@ -1,5 +1,3 @@
-// src/components/SurveyCard/index.jsx
-
 export default function SurveyCard({ title, responses, onEdit, onStats, onDelete }: {
     title: string,
     responses: any,

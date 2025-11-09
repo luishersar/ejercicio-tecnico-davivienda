@@ -1,4 +1,3 @@
-// src/pages/SurveyEditPage.tsx
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getSurveyByIdToUpdate, updateSurvey } from "../../http/survey.ts";
@@ -10,23 +9,34 @@ import {
   MenuItem,
   Button,
   IconButton,
-  Grid,
   Paper,
   CircularProgress,
   FormControlLabel,
   Switch,
+  FormControl,
+  InputLabel,
+  Stack,
+  Card,
+  CardContent,
+  Divider,
 } from "@mui/material";
 import { useState, useEffect } from "react";
-import DeleteIcon from "@mui/icons-material/Delete";
-import AddIcon from "@mui/icons-material/Add";
+import { Delete, Add, ArrowUpward, ArrowDownward } from "@mui/icons-material";
 import { useAuth } from "../../context/AuthContext.tsx";
 import toast from "react-hot-toast";
+
+enum QuestionType {
+  OPEN = 'open',
+  SCALE = 'scale',
+  MULTIPLE_CHOICE_ONE_ANSWER = 'multiple_choice_one_answer',
+  MULTIPLE_CHOICE_MULTIPLE_ANSWER = 'multiple_choice_multiple_answer',
+}
 
 export default function SurveyEditPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { token } = useAuth()
+  const { token } = useAuth();
 
   const { data, isLoading } = useQuery({
     queryKey: ["survey", id],
@@ -39,12 +49,17 @@ export default function SurveyEditPage() {
       updateSurvey(id, payload, token!),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["survey", id]
+        queryKey: ["survey", id],
       });
-      toast.success("Pregunta actualizada exitosamente", {
+      toast.success("Encuesta actualizada exitosamente", {
         position: "top-center",
       });
       navigate("/dashboard");
+    },
+    onError: () => {
+      toast.error("Error al actualizar la encuesta", {
+        position: "top-center",
+      });
     },
   });
 
@@ -56,16 +71,46 @@ export default function SurveyEditPage() {
     }
   }, [data]);
 
-  if (isLoading || !surveyData) return <CircularProgress/>;
+  if (isLoading || !surveyData) {
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh" }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  const needsOptions = (type: string) =>
+    type === QuestionType.MULTIPLE_CHOICE_ONE_ANSWER ||
+    type === QuestionType.MULTIPLE_CHOICE_MULTIPLE_ANSWER;
+
+  const getTypeLabel = (type: string) => {
+    switch (type) {
+      case QuestionType.OPEN:
+        return "Respuesta abierta";
+      case QuestionType.SCALE:
+        return "Escala numérica";
+      case QuestionType.MULTIPLE_CHOICE_ONE_ANSWER:
+        return "Opción múltiple (una respuesta)";
+      case QuestionType.MULTIPLE_CHOICE_MULTIPLE_ANSWER:
+        return "Opción múltiple (varias respuestas)";
+      default:
+        return type;
+    }
+  };
 
   const handleQuestionChange = (questionId: number | string, key: string, value: any) => {
     setSurveyData((prev: any) => ({
       ...prev,
-      questions: prev.questions.map((q: any) =>
-        q.id === questionId || q.id === questionId.toString()
-          ? { ...q, [key]: value }
-          : q
-      ),
+      questions: prev.questions.map((q: any) => {
+        if (q.id === questionId || q.id === questionId.toString()) {
+          const updated = { ...q, [key]: value };
+          if (key === "type" && !needsOptions(value)) {
+            updated.options = [];
+          }
+          return updated;
+        }
+        return q;
+      }),
     }));
   };
 
@@ -89,7 +134,13 @@ export default function SurveyEditPage() {
       ...prev,
       questions: [
         ...prev.questions,
-        { id: `new-${Date.now()}`, label: "", type: "open", options: [] },
+        {
+          id: `new-${Date.now()}`,
+          label: "",
+          type: QuestionType.OPEN,
+          options: [],
+          active: true,
+        },
       ],
     }));
   };
@@ -108,169 +159,289 @@ export default function SurveyEditPage() {
       ...prev,
       questions: prev.questions.map((q: any) =>
         q.id === questionId || q.id === questionId.toString()
-          ? { ...q, options: [...q.options, { label: "" }] }
+          ? { ...q, options: [...(q.options || []), { label: "" }] }
           : q
       ),
     }));
   };
 
-  const handleRemoveOption = (questionId: number | string, index: number) => {
+  const handleRemoveOption = (questionId: number | string, optionIndex: number) => {
     setSurveyData((prev: any) => ({
       ...prev,
       questions: prev.questions.map((q: any) =>
         q.id === questionId || q.id === questionId.toString()
           ? {
               ...q,
-              options: q.options.filter((_: any, idx: number) => idx !== index),
+              options: q.options.filter((_: any, idx: number) => idx !== optionIndex),
             }
           : q
       ),
     }));
   };
 
-    const handleSave = () => {1
-      const payload = {
-        ...surveyData,
-        questions: surveyData.questions.map((q: any) => {
-          if (typeof q.id === "string" && q.id.startsWith("new-")) {
-            return { ...q, id: undefined };
-          }
-          return q;
-        }),
-      };
-    
-      mutation.mutate({ id: id!, payload });
+  const moveQuestionUp = (index: number) => {
+    if (index === 0) return;
+    setSurveyData((prev: any) => {
+      const newQuestions = [...prev.questions];
+      [newQuestions[index], newQuestions[index - 1]] = [
+        newQuestions[index - 1],
+        newQuestions[index],
+      ];
+      return { ...prev, questions: newQuestions };
+    });
+  };
+
+  const moveQuestionDown = (index: number) => {
+    if (index === surveyData.questions.length - 1) return;
+    setSurveyData((prev: any) => {
+      const newQuestions = [...prev.questions];
+      [newQuestions[index], newQuestions[index + 1]] = [
+        newQuestions[index + 1],
+        newQuestions[index],
+      ];
+      return { ...prev, questions: newQuestions };
+    });
+  };
+
+  const handleSave = () => {
+    const payload = {
+      title: surveyData.title,
+      description: surveyData.description,
+      active: surveyData.active,
+      questions: surveyData.questions.map((q: any) => {
+        const question: any = {
+          label: q.label,
+          type: q.type,
+        };
+
+        if (typeof q.id === "number") {
+          question.id = q.id;
+        }
+
+        if (needsOptions(q.type) && q.options) {
+          question.options = q.options.map((opt: any) => {
+            const option: any = { label: opt.label };
+            if (opt.id) {
+              option.id = opt.id;
+            }
+            return option;
+          });
+        }
+
+        return question;
+      }),
     };
 
+    mutation.mutate({ id: id!, payload });
+  };
+
   return (
-    <Box sx={{ maxWidth: 800, mx: "auto", mt: 4 }}>
-      <Typography variant="h4" gutterBottom>
-         Editar Encuesta
-      </Typography>
+    <Box sx={{ maxWidth: 900, mx: "auto", p: 3 }}>
+      <Paper elevation={3} sx={{ p: 4 }}>
+        <Typography variant="h4" fontWeight={700} mb={3}>
+          Editar Encuesta
+        </Typography>
 
-    {/* Switch para activar/desactivar la encuesta */}
-      <FormControlLabel
-        control={
-          <Switch
-            checked={surveyData.active}
+        {/* Switch para activar/desactivar */}
+        <FormControlLabel
+          control={
+            <Switch
+              checked={surveyData.active}
+              onChange={(e) =>
+                setSurveyData((prev: any) => ({
+                  ...prev,
+                  active: e.target.checked,
+                }))
+              }
+              color="primary"
+            />
+          }
+          label={
+            <Typography variant="body2" color={surveyData.active ? "success.main" : "text.secondary"}>
+              {surveyData.active ? "Encuesta activa" : "Encuesta inactiva"}
+            </Typography>
+          }
+          sx={{ mb: 3 }}
+        />
+
+        {/* Información básica */}
+        <Stack spacing={3} mb={4}>
+          <TextField
+            fullWidth
+            label="Título de la encuesta"
+            required
+            value={surveyData.title}
             onChange={(e) =>
-              setSurveyData((prev: any) => ({
-                ...prev,
-                active: e.target.checked,
-              }))
+              setSurveyData((prev: any) => ({ ...prev, title: e.target.value }))
             }
-            color="primary"
           />
-        }
-        label={surveyData.active ? "Encuesta activa" : "Encuesta inactiva"}
-        sx={{ mb: 3 }}
-      />
-      
-      <TextField
-        fullWidth
-        label="Título"
-        value={surveyData.title}
-        onChange={(e) =>
-          setSurveyData((prev: any) => ({ ...prev, title: e.target.value }))
-        }
-        sx={{ mb: 2 }}
-      />
-      <TextField
-        fullWidth
-        label="Descripción"
-        value={surveyData.description || ""}
-        onChange={(e) =>
-          setSurveyData((prev: any) => ({ ...prev, description: e.target.value }))
-        }
-        sx={{ mb: 4 }}
-      />
 
-      {surveyData.questions.map((q: any, qIdx: number) => (
-        <Paper key={q.id} sx={{ p: 2, mb: 3 }}>
-          <Grid container spacing={2} alignItems="center">
-            <Grid size={{ xs:10 }}>
-              <TextField
-                fullWidth
-                label={`Pregunta ${qIdx + 1}`}
-                value={q.label}
-                onChange={(e) => handleQuestionChange(q.id, "label", e.target.value)}
-                sx={{ mb: 1 }}
-              />
-              <Select
-                fullWidth
-                value={q.type}
-                onChange={(e) => handleQuestionChange(q.id, "type", e.target.value)}
-                sx={{ mb: 1 }}
-              >
-                <MenuItem value="open">Abierta</MenuItem>
-                <MenuItem value="multiple_choice">Opción múltiple</MenuItem>
-                <MenuItem value="boolean">Verdadero/Falso</MenuItem>
-                <MenuItem value="scale">Escala 1-5</MenuItem>
-              </Select>
+          <TextField
+            fullWidth
+            label="Descripción (opcional)"
+            multiline
+            rows={3}
+            value={surveyData.description || ""}
+            onChange={(e) =>
+              setSurveyData((prev: any) => ({ ...prev, description: e.target.value }))
+            }
+          />
+        </Stack>
 
-              {(q.type === "multiple_choice" || q.type === "boolean") &&
-                q.options.map((o: any, oIdx: number) => (
-                  <Box key={oIdx} sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-                    <TextField
-                      fullWidth
-                      value={o.label}
-                      onChange={(e) =>
-                        handleOptionChange(q.id, oIdx, e.target.value)
-                      }
-                    />
-                    <IconButton
-                      color="error"
-                      onClick={() => handleRemoveOption(q.id, oIdx)}
+        <Divider sx={{ my: 3 }} />
+
+        {/* Preguntas */}
+        <Typography variant="h6" fontWeight={600} mb={2}>
+          Preguntas
+        </Typography>
+
+        {surveyData.questions.map((q: any, qIdx: number) => (
+          <Card key={q.id} sx={{ mb: 3, backgroundColor: "#f9f9f9" }}>
+            <CardContent>
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+                <Typography variant="subtitle1" fontWeight={600}>
+                  Pregunta {qIdx + 1}
+                </Typography>
+
+                <Box>
+                  <IconButton
+                    size="small"
+                    onClick={() => moveQuestionUp(qIdx)}
+                    disabled={qIdx === 0}
+                    title="Mover arriba"
+                  >
+                    <ArrowUpward />
+                  </IconButton>
+                  <IconButton
+                    size="small"
+                    onClick={() => moveQuestionDown(qIdx)}
+                    disabled={qIdx === surveyData.questions.length - 1}
+                    title="Mover abajo"
+                  >
+                    <ArrowDownward />
+                  </IconButton>
+                  <IconButton
+                    size="small"
+                    color="error"
+                    onClick={() => handleRemoveQuestion(q.id)}
+                    title="Eliminar pregunta"
+                  >
+                    <Delete />
+                  </IconButton>
+                </Box>
+              </Box>
+
+              <Stack spacing={2}>
+                <TextField
+                  fullWidth
+                  label="Texto de la pregunta"
+                  required
+                  value={q.label}
+                  onChange={(e) => handleQuestionChange(q.id, "label", e.target.value)}
+                />
+
+                <FormControl fullWidth>
+                  <InputLabel>Tipo de pregunta</InputLabel>
+                  <Select
+                    value={q.type}
+                    label="Tipo de pregunta"
+                    onChange={(e) => handleQuestionChange(q.id, "type", e.target.value)}
+                  >
+                    <MenuItem value={QuestionType.OPEN}>{getTypeLabel(QuestionType.OPEN)}</MenuItem>
+                    <MenuItem value={QuestionType.SCALE}>{getTypeLabel(QuestionType.SCALE)}</MenuItem>
+                    <MenuItem value={QuestionType.MULTIPLE_CHOICE_ONE_ANSWER}>
+                      {getTypeLabel(QuestionType.MULTIPLE_CHOICE_ONE_ANSWER)}
+                    </MenuItem>
+                    <MenuItem value={QuestionType.MULTIPLE_CHOICE_MULTIPLE_ANSWER}>
+                      {getTypeLabel(QuestionType.MULTIPLE_CHOICE_MULTIPLE_ANSWER)}
+                    </MenuItem>
+                  </Select>
+                </FormControl>
+
+                {/* Opciones */}
+                {needsOptions(q.type) && (
+                  <Box
+                    sx={{
+                      pl: 2,
+                      borderLeft: "3px solid #1976d2",
+                      bgcolor: "#e3f2fd",
+                      p: 2,
+                      borderRadius: 1,
+                    }}
+                  >
+                    <Typography variant="subtitle2" fontWeight={600} mb={1}>
+                      Opciones{" "}
+                      {q.type === QuestionType.MULTIPLE_CHOICE_MULTIPLE_ANSWER &&
+                        "(Se pueden seleccionar varias)"}
+                    </Typography>
+
+                    {q.options?.map((o: any, oIdx: number) => (
+                      <Box key={oIdx} sx={{ display: "flex", gap: 1, mb: 1 }}>
+                        <TextField
+                          size="small"
+                          fullWidth
+                          placeholder={`Opción ${oIdx + 1}`}
+                          value={o.label}
+                          onChange={(e) => handleOptionChange(q.id, oIdx, e.target.value)}
+                        />
+                        <IconButton
+                          size="small"
+                          color="error"
+                          onClick={() => handleRemoveOption(q.id, oIdx)}
+                          title="Eliminar opción"
+                        >
+                          <Delete />
+                        </IconButton>
+                      </Box>
+                    ))}
+
+                    <Button
+                      size="small"
+                      startIcon={<Add />}
+                      onClick={() => handleAddOption(q.id)}
+                      sx={{ mt: 1 }}
                     >
-                      <DeleteIcon />
-                    </IconButton>
+                      Agregar opción
+                    </Button>
+
+                    {q.options && q.options.length < 2 && (
+                      <Typography variant="caption" color="error" display="block" mt={1}>
+                        ⚠️ Se requieren al menos 2 opciones
+                      </Typography>
+                    )}
                   </Box>
-                ))}
+                )}
+              </Stack>
+            </CardContent>
+          </Card>
+        ))}
 
-              {(q.type === "multiple_choice" || q.type === "boolean") && (
-                <Button
-                  startIcon={<AddIcon />}
-                  onClick={() => handleAddOption(q.id)}
-                  sx={{ mt: 1 }}
-                >
-                  Agregar opción
-                </Button>
-              )}
-            </Grid>
-
-            <Grid size={{ xs:2 }}>
-              <IconButton
-                color="error"
-                onClick={() => handleRemoveQuestion(q.id)}
-              >
-                <DeleteIcon />
-              </IconButton>
-            </Grid>
-          </Grid>
-        </Paper>
-      ))}
-
-      <Button
-        variant="outlined"
-        startIcon={<AddIcon />}
-        onClick={handleAddQuestion}
-        sx={{ mb: 4 }}
-      >
-        Agregar pregunta
-      </Button>
-
-      <Box>
-        <Button variant="contained" color="primary" onClick={handleSave}>
-          Guardar cambios
-        </Button>
         <Button
-          variant="text"
-          sx={{ ml: 2 }}
-          onClick={() => navigate("/dashboard")}
+          variant="outlined"
+          startIcon={<Add />}
+          onClick={handleAddQuestion}
+          fullWidth
+          sx={{ mb: 3 }}
         >
-          Cancelar
+          Agregar Pregunta
         </Button>
-      </Box>
+
+        <Divider sx={{ my: 3 }} />
+
+        {/* Botones de acción */}
+        <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}>
+          <Button variant="outlined" color="secondary" onClick={() => navigate("/dashboard")}>
+            Cancelar
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleSave}
+            disabled={!surveyData.title || surveyData.questions.length === 0 || mutation.isPending}
+          >
+            {mutation.isPending ? "Guardando..." : "Guardar Cambios"}
+          </Button>
+        </Box>
+      </Paper>
     </Box>
   );
 }

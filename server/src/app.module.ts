@@ -3,7 +3,6 @@ import { AuthModule } from './auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { config as dotenvConfig } from 'dotenv';
-import { UsersModule } from './users/users.module';
 import { SurveysModule } from './surveys/surveys.module';
 dotenvConfig({ path: './.env' });
 
@@ -28,7 +27,6 @@ dotenvConfig({ path: './.env' });
       },
     }),
     SurveysModule,
-    UsersModule,
   ],
 })
 export class AppModule {}

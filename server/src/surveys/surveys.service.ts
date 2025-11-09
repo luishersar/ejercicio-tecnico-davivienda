@@ -26,16 +26,26 @@ export class SurveysService {
     const survey = this.surveyRepo.create({
       title: dto.title,
       description: dto.description,
+      active: true,
     });
 
     survey.questions = dto.questions.map((q) => {
       const question = this.questionRepo.create({
         label: q.label,
         type: q.type,
+        active: true,
       });
 
-      if (q.type === QuestionType.MULTIPLE_CHOICE && q.options) {
-        question.options = q.options.map((o) => this.optionRepo.create(o));
+      const needsOptions =
+        q.type === QuestionType.MULTIPLE_CHOICE_ONE_ANSWER ||
+        q.type === QuestionType.MULTIPLE_CHOICE_MULTIPLE_ANSWER;
+
+      if (needsOptions && q.options && q.options.length > 0) {
+        question.options = q.options.map((o) =>
+          this.optionRepo.create({
+            label: o.label,
+          }),
+        );
       }
 
       return question;
@@ -75,7 +85,6 @@ export class SurveysService {
   }
 
   async updateSurvey(id: number, dto: UpdateSurveyDto) {
-    console.log(dto, 'dto');
     const survey = await this.surveyRepo.findOne({
       where: { id },
       relations: ['questions', 'questions.options'],
@@ -96,7 +105,6 @@ export class SurveysService {
         dto.questions.filter((q) => typeof q.id === 'number').map((q) => q.id),
       );
 
-      // Marcar como inactivas las preguntas que ya no están en el payload
       for (const question of survey.questions) {
         if (!incomingIds.has(question.id)) {
           question.active = false;
@@ -104,21 +112,19 @@ export class SurveysService {
         }
       }
 
-      // Luego el update/create normal
       for (const q of dto.questions) {
         let question: Question | undefined;
 
-        if (q.id) {
+        if (q.id && typeof q.id === 'number') {
           question = survey.questions.find((x) => x.id === q.id);
           if (!question) {
             throw new BadRequestException(
-              `La question con id ${q.id} no pertenece a la survey ${survey.id}`,
+              `La pregunta con id ${q.id} no pertenece a la encuesta ${survey.id}`,
             );
           }
-
           question.label = q.label;
           question.type = q.type;
-          question.active = true; // si viene en payload, asegurar que esté activa
+          question.active = true;
           await this.questionRepo.save(question);
         } else {
           question = this.questionRepo.create({
@@ -130,14 +136,32 @@ export class SurveysService {
           await this.questionRepo.save(question);
         }
 
-        // Opciones...
-        if (q.options && q.type === QuestionType.MULTIPLE_CHOICE) {
+        if (
+          q.options &&
+          (q.type === QuestionType.MULTIPLE_CHOICE_ONE_ANSWER ||
+            q.type === QuestionType.MULTIPLE_CHOICE_MULTIPLE_ANSWER)
+        ) {
+          const incomingOptionIds = new Set(
+            q.options
+              .filter((opt) => typeof opt.id === 'number')
+              .map((opt) => opt.id),
+          );
+
+          if (question.options) {
+            for (const option of question.options) {
+              if (!incomingOptionIds.has(option.id)) {
+                await this.optionRepo.remove(option);
+              }
+            }
+          }
+
           for (const opt of q.options) {
-            if (opt.id) {
-              const option = question.options.find((x) => x.id === opt.id);
-              if (!option) continue;
-              option.label = opt.label;
-              await this.optionRepo.save(option);
+            if (opt.id && typeof opt.id === 'number') {
+              const option = question.options?.find((x) => x.id === opt.id);
+              if (option) {
+                option.label = opt.label;
+                await this.optionRepo.save(option);
+              }
             } else {
               const newOption = this.optionRepo.create({
                 question,
@@ -145,6 +169,10 @@ export class SurveysService {
               });
               await this.optionRepo.save(newOption);
             }
+          }
+        } else {
+          if (question.options && question.options.length > 0) {
+            await this.optionRepo.remove(question.options);
           }
         }
       }

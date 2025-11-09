@@ -14,6 +14,7 @@ import { LoginDto } from './dtos/login.dto';
 import { Public } from './decorators/public.decorator';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { ApiTags } from '@nestjs/swagger';
+import { SignUpDto } from './dtos/signup.dto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -31,5 +32,12 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   me(@Req() req: Request) {
     return req.user;
+  }
+
+  @Public()
+  @Post('signup')
+  @HttpCode(200)
+  signup(@Body() dto: SignUpDto) {
+    return this.authService.signUp(dto);
   }
 }

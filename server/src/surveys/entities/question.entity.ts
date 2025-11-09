@@ -11,10 +11,9 @@ import { QuestionOption } from './question-option.entity';
 
 export enum QuestionType {
   OPEN = 'open',
-  MULTIPLE_CHOICE = 'multiple_choice',
-  TRUE_FALSE = 'true_false',
   SCALE = 'scale',
-  BOOLEAN = 'boolean',
+  MULTIPLE_CHOICE_ONE_ANSWER = 'multiple_choice_one_answer',
+  MULTIPLE_CHOICE_MULTIPLE_ANSWER = 'multiple_choice_multiple_answer',
 }
 
 @Entity('questions')

@@ -1,4 +1,3 @@
-// src/surveys/dto/create-survey.dto.ts
 import { IsString, IsOptional, IsArray, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import { QuestionType } from '../entities/question.entity';

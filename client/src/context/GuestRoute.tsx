@@ -1,4 +1,3 @@
-// src/context/GuestRoute.tsx
 import { ReactNode, useContext, useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import AuthContext from "./AuthContext";
