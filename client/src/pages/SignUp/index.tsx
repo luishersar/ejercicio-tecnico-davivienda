@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import PublicLayout from '../../layouts/PublicLayout'
-import { Box, Button, Link, TextField, Typography } from '@mui/material'
+import { Box, Button, Divider, Link, TextField, Typography } from '@mui/material'
 import { signUp } from '../../http/auth';
 import toast from 'react-hot-toast';
  
@@ -24,9 +24,16 @@ const SignUp = () => {
   };
   return (
    <PublicLayout>
-     <Typography variant="h4" fontWeight={700} textAlign="center" mb={3}>
+     <Box display={'flex'} justifyContent={'center'} alignItems={'center'} flexDirection={'row'} gap={'10px'}>
+        <img src="/src/assets/favicon/favicon.ico" alt="VeloForm Logo" width={50} height={50} />
+        <Typography variant="h4" fontWeight={700} textAlign="center" >
+            VeloForm
+          </Typography>
+          <Divider  orientation="vertical" variant="middle" flexItem/>
+        <Typography variant="h4" fontWeight={200} textAlign="center" >
             SignUp
-     </Typography>
+          </Typography>
+      </Box>
      <Box component="form" noValidate autoComplete="off" onSubmit={handleSubmit}>
             <TextField
               label="Name"

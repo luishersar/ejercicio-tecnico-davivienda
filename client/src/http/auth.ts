@@ -13,6 +13,7 @@ export type User = {
   id: number;
   username: string;
   email: string;
+  name: string;
   roles?: string[];
   permissions?: string[];
 };

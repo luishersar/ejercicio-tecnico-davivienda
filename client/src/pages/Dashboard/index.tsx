@@ -217,25 +217,24 @@ export default function Dashboard() {
                   height: '100%',
                   borderRadius: 3,
                   border: '1px solid',
-                  borderColor: survey.active ? 'divider' : 'error.light',
-                  bgcolor: survey.active ? 'background.paper' : alpha('#d32f2f', 0.05),
+                  borderColor: survey.active ? 'divider' : 'gray',
+                  bgcolor: survey.active ? 'background.paper' : alpha('#6b6767ff', 0.05),
                   cursor: "pointer",
                   transition: "all 0.3s ease",
                   "&:hover": {
                     transform: "translateY(-8px)",
                     boxShadow: 6,
-                    borderColor: survey.active ? 'primary.main' : 'error.main',
+                    borderColor: survey.active ? 'primary.main' : 'gray',
                   },
                 }}
               >
                 <CardContent sx={{ p: 3 }}>
-                  {/* Header con estado y menú */}
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
                     <Chip
                       icon={survey.active ? <CheckCircleIcon /> : <CancelIcon />}
                       label={survey.active ? "Activa" : "Inactiva"}
                       size="small"
-                      color={survey.active ? "success" : "error"}
+                      color={survey.active ? "success" : "default"}
                       sx={{ fontWeight: 600 }}
                     />
                     <IconButton

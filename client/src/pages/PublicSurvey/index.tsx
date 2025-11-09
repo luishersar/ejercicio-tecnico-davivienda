@@ -22,7 +22,7 @@ import {
   FormHelperText,
 } from "@mui/material";
 import toast from "react-hot-toast";
-import { useForm, Controller, set } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { 
   createDynamicSurveyValidation, 
@@ -30,6 +30,7 @@ import {
   transformToApiFormat,
 } from '../../yup/index.ts';
 import { useState } from "react";
+import { useAuth } from "../../context/AuthContext.tsx";
 
 enum QuestionType {
   OPEN = 'open',
@@ -41,6 +42,7 @@ enum QuestionType {
 export default function SurveyPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [success, SetSucces] = useState(false)
 
@@ -84,6 +86,14 @@ export default function SurveyPage() {
     submitMutation.mutate(payload);
   };
 
+   const handleBack = () =>{
+    if(user){
+      navigate("/dashboard");
+    }else{
+      navigate("/");
+    }
+  }
+
   if (isLoading) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh" }}>
@@ -107,7 +117,7 @@ export default function SurveyPage() {
           <Alert severity="warning" sx={{ mb: 2 }}>
             Esta encuesta ha sido desactivada por el administrador
           </Alert>
-          <Button variant="outlined" onClick={() => navigate("/")}>
+          <Button variant="outlined" onClick={handleBack}>
             Volver al inicio
           </Button>
         </Paper>
@@ -122,7 +132,7 @@ export default function SurveyPage() {
           <Alert severity="info" sx={{ mb: 2 }}>
             Esta encuesta no tiene preguntas activas. Por favor contacte al administrador.
           </Alert>
-          <Button variant="outlined" onClick={() => navigate("/")}>
+          <Button variant="outlined" onClick={handleBack}>
             Volver al inicio
           </Button>
         </Paper>

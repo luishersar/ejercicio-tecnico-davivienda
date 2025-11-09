@@ -8,11 +8,11 @@ import SurveyEditPage from "./pages/SurveyEditPage";
 import LandingPage from "./pages/LandingPage";
 import SurveyBuilder from "./pages/SurveyBuilder";
 import SignUp from "./pages/SignUp";
+import { AppLayout } from "./layouts";
 
 export default function App() {
   return (
       <Routes>
-
          <Route path="/" element={<LandingPage />} />
 
         <Route path="/login" element={
@@ -21,47 +21,23 @@ export default function App() {
           </GuestRoute>
           } />
 
-
-        <Route
-          path="/surveys/new"
-          element={
-            <PrivateRoute>
-              <SurveyBuilder/>
-            </PrivateRoute>
-          }
-        />
-
-        <Route
-          path="/dashboard"
-          element={
-            <PrivateRoute>
-              <Dashboard />
-            </PrivateRoute>
-          }
-        />
-
-        <Route
-          path="/surveys/:id"
-          element={
-              <PublicSurvey  />
-          }
-        />
-
-        <Route
-          path="/surveys/:id/edit"
-          element={
-            <PrivateRoute>
-              <SurveyEditPage />
-            </PrivateRoute>
-          }
-        />
-
         <Route path="/signup" element={
            <GuestRoute>
               <SignUp />
           </GuestRoute>
           } />
+          
+        <Route path="/surveys/:id" element={<PublicSurvey />} />
 
+        <Route element={
+          <PrivateRoute>
+            <AppLayout />
+          </PrivateRoute>
+        }>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/surveys/new" element={<SurveyBuilder />} />
+          <Route path="/surveys/:id/edit" element={<SurveyEditPage />} />
+        </Route>
       </Routes>
   );
 }

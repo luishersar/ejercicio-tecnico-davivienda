@@ -1,4 +1,4 @@
-import { ReactNode, useContext, useEffect } from "react";
+import { ReactNode, useContext } from "react";
 import { Navigate } from "react-router-dom";
 import AuthContext from "./AuthContext";
 import { CircularProgress } from "@mui/material";

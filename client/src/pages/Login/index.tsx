@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Box, TextField, Button, Typography, Link, Paper, Grid } from "@mui/material";
+import { Box, TextField, Button, Typography, Link, Divider } from "@mui/material";
 import toast from "react-hot-toast";
 import { useAuth } from "../../context/AuthContext";
 import PublicLayout from "../../layouts/PublicLayout";
@@ -21,9 +21,16 @@ export default function Login() {
 
   return (
     <PublicLayout>
-      <Typography variant="h4" fontWeight={700} textAlign="center" mb={3}>
-          Login
-        </Typography>
+      <Box display={'flex'} justifyContent={'center'} alignItems={'center'} flexDirection={'row'} gap={'10px'}>
+        <img src="/src/assets/favicon/favicon.ico" alt="VeloForm Logo" width={50} height={50} />
+        <Typography variant="h4" fontWeight={700} textAlign="center" >
+            VeloForm
+          </Typography>
+          <Divider  orientation="vertical" variant="middle" flexItem/>
+        <Typography variant="h4" fontWeight={200} textAlign="center" >
+            Login
+          </Typography>
+      </Box>
         <Box component="form" noValidate autoComplete="off" onSubmit={handleSubmit}>
           <TextField
             label="Email"
@@ -49,11 +56,7 @@ export default function Login() {
            Sign In
          </Button>
         </Box>
-        <Box textAlign="center" mt={2}>
-          <Link href="#" underline="hover" color="primary">
-            Forgot your password?
-          </Link>
-        </Box>
+        
         <Box textAlign="center" mt={1}>
           <Link href="signup" underline="hover" color="primary">
             Don't have an account? Sign up
