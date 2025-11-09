@@ -7,6 +7,7 @@ import PublicSurvey from "./pages/PublicSurvey";
 import SurveyEditPage from "./pages/SurveyEditPage";
 import LandingPage from "./pages/LandingPage";
 import SurveyBuilder from "./pages/SurveyBuilder";
+import SignUp from "./pages/SignUp";
 
 export default function App() {
   return (
@@ -54,6 +55,12 @@ export default function App() {
             </PrivateRoute>
           }
         />
+
+        <Route path="/signup" element={
+           <GuestRoute>
+              <SignUp />
+          </GuestRoute>
+          } />
       </Routes>
   );
 }

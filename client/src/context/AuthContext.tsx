@@ -1,6 +1,6 @@
 import { createContext, useEffect, useState, ReactNode, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import { login as loginApi, getMe, User } from "../http/auth";
+import { login as loginApi, signUp as signUpApi ,getMe, User } from "../http/auth";
 
 type AuthContextType = {
   user: User | null;
@@ -8,6 +8,7 @@ type AuthContextType = {
   token: string | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
+  signUp: (email: string, password: string, name: string) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType>({
@@ -16,6 +17,7 @@ const AuthContext = createContext<AuthContextType>({
   token: null,
   login: async () => {},
   logout: () => {},
+  signUp: async () => {},
 });
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -60,8 +62,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     navigate("/login");
   };
 
+
+  const signUp = async (email: string, password: string, name:string) => {
+    const data = await signUpApi({ email, password,name });
+    localStorage.setItem("token", data.accessToken);
+    setUser(data.user);
+    setToken(data.accessToken);
+    navigate("/dashboard");
+  };
+
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, token, loading, login, logout, signUp }}>
       {children}
     </AuthContext.Provider>
   );
