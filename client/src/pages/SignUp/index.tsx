@@ -1,28 +1,35 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import PublicLayout from '../../layouts/PublicLayout'
-import { Box, Button, Divider, Link, TextField, Typography } from '@mui/material'
+import { Box, Button, Divider, IconButton, InputAdornment, Link, TextField, Typography } from '@mui/material'
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import { FormDataSignUp, validationSchemaSignUp } from '../../schemas/signup.schema';
  
 const SignUp = () => {
-  const [email, setEmail] = useState("");
-  const [name, setName] = useState("");
-  const [password, setPassword] = useState("");
-  const [isLoading,setIsLoading] = useState(false);
-  const { signUp } = useAuth()
+  const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const { signUp } = useAuth();
 
-   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const { register, handleSubmit, formState: { errors } } = 
+    useForm<{ email: string; password: string, name: string }>({
+    resolver: yupResolver(validationSchemaSignUp),
+  });
+
+  const onSubmit = async (data: FormDataSignUp) => {
     try {
-      setIsLoading(true)
-      await signUp(email, password, name);
+      setIsLoading(true);
+      await signUp(data.email, data.password, data.name);
       toast.success("User created successfully");
-      setIsLoading(false)
+      setIsLoading(false);
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Error en login");
-      setIsLoading(false)
+      toast.error(err.response?.data?.message || "Error en registro");
+      setIsLoading(false);
     }
   };
+
   return (
    <PublicLayout>
      <Box display={'flex'} justifyContent={'center'} alignItems={'center'} flexDirection={'row'} gap={'10px'}>
@@ -35,12 +42,13 @@ const SignUp = () => {
             SignUp
           </Typography>
       </Box>
-     <Box component="form" noValidate autoComplete="off" onSubmit={handleSubmit}>
+     <Box component="form" noValidate autoComplete="off" onSubmit={handleSubmit(onSubmit)}>
             <TextField
               label="Name"
               fullWidth
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              {...register("name")}
+              error={!!errors.name}
+              helperText={errors.name?.message}
               margin="normal"
               disabled={isLoading}
             />
@@ -48,8 +56,9 @@ const SignUp = () => {
             <TextField
               label="Email"
               fullWidth
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              {...register("email")}
+              error={!!errors.email}
+              helperText={errors.email?.message}
               margin="normal"
               disabled={isLoading}
             />
@@ -57,11 +66,25 @@ const SignUp = () => {
             <TextField
               label="Password"
               fullWidth
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              type={showPassword ? "text" : "password"}
+              {...register("password")}
+              error={!!errors.password}
+              helperText={errors.password?.message}
               margin="normal"
               disabled={isLoading}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowPassword(!showPassword)}
+                      edge="end"
+                      aria-label="toggle password visibility"
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
             />
  
             <Button
@@ -69,15 +92,15 @@ const SignUp = () => {
              variant="contained"
              sx={{ mt: 3, py: 1.4, fontWeight: 600 }}
              type="submit"
-              disabled={isLoading}
+             disabled={isLoading}
            >
-             Sign In
+             Sign Up
            </Button>
           </Box>
  
           <Box textAlign="center" mt={2}>
             <Link href="login" underline="hover" color="primary">
-              Already an user? Login
+              ¿Ya tienes un usuario? Inicia Sesión
             </Link>
           </Box>
    </PublicLayout>

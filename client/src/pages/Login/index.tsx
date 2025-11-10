@@ -1,23 +1,29 @@
-import React, { useState } from "react";
-import { Box, TextField, Button, Typography, Link, Divider } from "@mui/material";
+import { useState } from "react";
+import { Box, TextField, Button, Typography, Link, Divider, InputAdornment, IconButton } from "@mui/material";
 import toast from "react-hot-toast";
 import { useAuth } from "../../context/AuthContext";
 import PublicLayout from "../../layouts/PublicLayout";
+import { Visibility, VisibilityOff } from "@mui/icons-material";
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";  
+import { FormDataLogIn, validationSchemaLogIn } from "../../schemas/login.schema";
 
 export default function Login() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
+  
+  const { register, handleSubmit, formState: { errors } } = 
+    useForm<{ email: string; password: string }>({
+    resolver: yupResolver(validationSchemaLogIn),
+  });
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const onSubmit = async (data: FormDataLogIn) => {
     try {
-      await login(email, password);
+      await login(data.email, data.password);
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Error en login");
     }
   };
-
 
   return (
     <PublicLayout>
@@ -31,21 +37,36 @@ export default function Login() {
             Login
           </Typography>
       </Box>
-        <Box component="form" noValidate autoComplete="off" onSubmit={handleSubmit}>
+        <Box component="form" noValidate autoComplete="off" onSubmit={handleSubmit(onSubmit)}>
           <TextField
             label="Email"
             fullWidth
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            {...register("email")}
+            error={!!errors.email}
+            helperText={errors.email?.message}
             margin="normal"
           />
           <TextField
             label="Password"
             fullWidth
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            type={showPassword ? "text" : "password"}
+            {...register("password")}
+            error={!!errors.password}
+            helperText={errors.password?.message}
             margin="normal"
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    onClick={() => setShowPassword(!showPassword)}
+                    edge="end"
+                    aria-label="toggle password visibility"
+                  >
+                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
           />
           <Button
            fullWidth
@@ -59,7 +80,7 @@ export default function Login() {
         
         <Box textAlign="center" mt={1}>
           <Link href="signup" underline="hover" color="primary">
-            ¿No tienes una cuenta? Registrate
+            ¿Necesitas gestionar tus formularios? Registrate
           </Link>
         </Box>
 
