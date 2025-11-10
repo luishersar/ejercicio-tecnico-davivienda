@@ -81,3 +81,18 @@ Actualmente, las funciones principales están implementadas. Pueden añadirse me
 
 * Reportes gráficos.
 * Tipos adicionales de pregunta.
+
+## Configuración de Variables de Entorno
+
+Para ejecutar el proyecto localmente, es necesario configurar las variables de entorno.
+
+### Frontend
+1. Copiar el archivo `.env.example` y renombrarlo a `.env`
+2. Establecer el valor de `VITE_API_BASE_URL`
+
+
+### Backend
+1. Copiar el archivo `.env.example` y renombrarlo a `.env`:
+2. Completar los valores correspondientes:
+3. Si se está usando PostgreSQL localmente, ajustar los parámetros de la base de datos según la instalación local.
+
