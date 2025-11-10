@@ -111,3 +111,9 @@ Dentro de esta interfaz podrás:
 - Ejecutar peticiones en tiempo real para probar el comportamiento de la API.
 
 Esto facilita la comprensión del flujo interno, la integración con otros servicios y la validación de los datos enviados o recibidos.
+
+Además, el proyecto cuenta con migraciones de base de datos para asegurar la estructura necesaria.  
+Puedes ejecutar las migraciones con:
+
+```bash
+npm run migration:run
