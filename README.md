@@ -96,3 +96,18 @@ Para ejecutar el proyecto localmente, es necesario configurar las variables de e
 2. Completar los valores correspondientes:
 3. Si se está usando PostgreSQL localmente, ajustar los parámetros de la base de datos según la instalación local.
 
+### Documentación de la API (Swagger)
+
+El backend cuenta con documentación interactiva generada con **Swagger**, lo cual permite visualizar y probar los endpoints directamente desde el navegador sin necesidad de herramientas externas.
+
+Una vez levantado el backend, puedes acceder a la documentación en:
+
+http://localhost:3001/docs
+
+Dentro de esta interfaz podrás:
+
+- Explorar todos los módulos y rutas disponibles.
+- Ver descripciones, parámetros y respuestas esperadas.
+- Ejecutar peticiones en tiempo real para probar el comportamiento de la API.
+
+Esto facilita la comprensión del flujo interno, la integración con otros servicios y la validación de los datos enviados o recibidos.
