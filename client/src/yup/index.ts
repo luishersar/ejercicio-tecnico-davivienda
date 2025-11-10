@@ -1,30 +1,5 @@
 import * as Yup from 'yup';
-
-enum QuestionType {
-  OPEN = 'open',
-  SCALE = 'scale',
-  MULTIPLE_CHOICE_ONE_ANSWER = 'multiple_choice_one_answer',
-  MULTIPLE_CHOICE_MULTIPLE_ANSWER = 'multiple_choice_multiple_answer',
-}
-
-interface Question {
-  id: number;
-  label: string;
-  type: QuestionType;
-  active: boolean;
-  options?: Array<{ id: number; label: string }>;
-}
-
-interface Survey {
-  id: number;
-  title: string;
-  description: string;
-  active: boolean;
-  questions: Question[];
-}
-
-export type SurveyFormValues = Record<string, string | number | string[]>;
-
+import { QuestionType, Survey, SurveyFormValues } from '../types/types';
 
 export const createDynamicSurveyValidation = (survey: Survey) => {
   const shape: Record<string, Yup.AnySchema> = {};

@@ -7,8 +7,8 @@ import {
   IsBoolean,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { QuestionType } from '../entities/question.entity';
 import { ApiProperty } from '@nestjs/swagger';
+import { QuestionType } from 'src/common/utils/enums/question-type.enum';
 
 export class UpdateQuestionOptionDto {
   @ApiProperty()

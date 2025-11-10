@@ -17,7 +17,7 @@ export class SurveyAnswersController {
   }
 
   @Get(':id')
-  getById(@Param('id') id: string) {
+  getById(@Param('id') id: number) {
     return this.surveyAnswerService.getResponseById(id);
   }
 }

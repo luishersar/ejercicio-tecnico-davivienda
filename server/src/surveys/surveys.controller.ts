@@ -14,6 +14,7 @@ import { CreateSurveyDto } from './dto/create-survey.dto';
 import { UpdateSurveyDto } from './dto/update-survey.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 
 @ApiTags('surveys')
 @ApiBearerAuth()
@@ -23,14 +24,17 @@ export class SurveysController {
 
   @Post()
   @UseGuards(JwtAuthGuard)
-  create(@Body() createSurveyDto: CreateSurveyDto) {
-    return this.surveysService.create(createSurveyDto);
+  create(
+    @Body() createSurveyDto: CreateSurveyDto,
+    @CurrentUser() user: { userId: string; email: string },
+  ) {
+    return this.surveysService.create(createSurveyDto, user.userId);
   }
 
   @Get()
   @UseGuards(JwtAuthGuard)
-  findAll() {
-    return this.surveysService.findAll();
+  findAllByUserId(@CurrentUser() user: { userId: string; email: string }) {
+    return this.surveysService.findAll(user.userId);
   }
 
   @Get(':id')

@@ -9,7 +9,6 @@ import {
   FormControlLabel,
   Radio,
   Slider,
-  CircularProgress,
   Button,
   Paper,
   Card,
@@ -29,8 +28,9 @@ import {
   getInitialValues, 
   transformToApiFormat,
 } from '../../yup/index.ts';
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "../../context/AuthContext.tsx";
+import { isAxiosError } from "axios";
 
 enum QuestionType {
   OPEN = 'open',
@@ -46,10 +46,11 @@ export default function SurveyPage() {
 
   const [success, SetSucces] = useState(false)
 
-  const { data, isLoading } = useQuery({
+  const { data, error } = useQuery({
     queryKey: ["survey", id],
     queryFn: () => getSurveyById(id!),
     enabled: !!id,
+    retry: false
   });
 
   const {
@@ -94,19 +95,55 @@ export default function SurveyPage() {
     }
   }
 
-  if (isLoading) {
-    return (
-      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh" }}>
-        <CircularProgress size={60} />
-      </Box>
-    );
-  }
+   useEffect(() => {
+    if (isAxiosError(error)) {
+      toast.error('Encuesta no encontrada', {
+        position: "top-center",
+      });
+    }
+  }, [error]);
 
   if (!data) {
     return (
-      <Box sx={{ maxWidth: 600, mx: "auto", mt: 8 }}>
-        <Alert severity="error">Encuesta no encontrada</Alert>
-      </Box>
+      <Box
+      sx={{
+        maxWidth: 600,
+        mx: "auto",
+        mt: 12,
+        textAlign: "center",
+        display: "flex",
+        justifyContent: "center",
+      }}
+    >
+      <Stack spacing={3} sx={{ width: "100%" }}>
+        <Alert
+          severity="error"
+          sx={{
+            fontSize: "1rem",
+            py: 2,
+            borderRadius: 2,
+          }}
+        >
+          Encuesta no encontrada
+        </Alert>
+
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={() => navigate("/")}
+          sx={{
+            textTransform: "none",
+            borderRadius: 2,
+            px: 4,
+            py: 1.5,
+            fontWeight: 600,
+            mx: "auto",
+          }}
+        >
+          Volver al inicio
+        </Button>
+      </Stack>
+    </Box>
     );
   }
 

@@ -3,15 +3,13 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 
 @Entity({ name: 'users' })
 export class User {
   @PrimaryGeneratedColumn({ type: 'bigint' })
   id: string;
-
-  @CreateDateColumn({ name: 'createdAt', type: 'timestamptz' })
-  createdAt: Date;
 
   @Column({ type: 'varchar', nullable: true })
   name: string | null;
@@ -21,4 +19,16 @@ export class User {
 
   @Column({ type: 'varchar' })
   password: string;
+
+  @CreateDateColumn({
+    type: 'timestamptz',
+    default: () => 'current_timestamp',
+  })
+  createdAt: Date;
+
+  @UpdateDateColumn({
+    type: 'timestamptz',
+    default: () => 'current_timestamp',
+  })
+  updatedAt: Date;
 }

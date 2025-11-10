@@ -3,6 +3,7 @@ import * as jwt from 'jsonwebtoken';
 import { LoginDto } from './dtos/login.dto';
 import { UsersService } from './services/users.service';
 import { SignUpDto } from './dtos/signup.dto';
+import { encryptPassword } from 'src/common/utils/bcrypt';
 
 @Injectable()
 export class AuthService {
@@ -39,9 +40,11 @@ export class AuthService {
       throw new BadRequestException('Ya Existe un Usuario con ese Email');
     }
 
+    const encryptedPassword = await encryptPassword(dto.password);
+
     const newUser = await this.users.createUser(
       dto.email,
-      dto.password,
+      encryptedPassword,
       dto.name,
     );
 

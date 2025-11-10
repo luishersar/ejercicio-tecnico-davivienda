@@ -17,7 +17,7 @@ import {
   CircularProgress,
   Alert,
 } from '@mui/material';
-import { Add, Delete, ArrowUpward, ArrowDownward } from '@mui/icons-material';
+import { Add, Delete } from '@mui/icons-material';
 import { useMutation } from '@tanstack/react-query';
 import { createSurvey } from '../../http/survey';
 import { useAuth } from "../../context/AuthContext";
@@ -51,14 +51,6 @@ interface Survey {
   description: string;
   questions: Question[];
   active?: boolean;
-}
-
-interface SurveyFormProps {
-  initialData?: Survey;
-  onSubmit?: (data: any) => Promise<any>;
-  onCancel?: () => void;
-  onSuccess?: (data: any) => void;
-  onError?: (error: any) => void;
 }
 
 export default function SurveyForm() {
@@ -99,20 +91,6 @@ export default function SurveyForm() {
 
   const deleteQuestion = (index: number) => {
     const newQuestions = survey.questions.filter((_, i) => i !== index);
-    setSurvey({ ...survey, questions: newQuestions });
-  };
-
-  const moveQuestionUp = (index: number) => {
-    if (index === 0) return;
-    const newQuestions = [...survey.questions];
-    [newQuestions[index], newQuestions[index - 1]] = [newQuestions[index - 1], newQuestions[index]];
-    setSurvey({ ...survey, questions: newQuestions });
-  };
-
-  const moveQuestionDown = (index: number) => {
-    if (index === survey.questions.length - 1) return;
-    const newQuestions = [...survey.questions];
-    [newQuestions[index], newQuestions[index + 1]] = [newQuestions[index + 1], newQuestions[index]];
     setSurvey({ ...survey, questions: newQuestions });
   };
 
@@ -178,8 +156,6 @@ export default function SurveyForm() {
         return question;
       }),
     };
-
-    console.log(payload, "payload")
     
     mutation.mutate(payload);
   };
@@ -206,7 +182,6 @@ export default function SurveyForm() {
           {'Crear Nueva Encuesta'}
         </Typography>
 
-        {/* Mensajes de éxito y error */}
         {mutation.isSuccess && (
           <Alert severity="success" sx={{ mb: 3 }} onClose={() => mutation.reset()}>
             ¡Encuesta guardada exitosamente!
@@ -258,22 +233,6 @@ export default function SurveyForm() {
                   </Typography>
                   
                   <Box>
-                    <IconButton 
-                      size="small" 
-                      onClick={() => moveQuestionUp(qIndex)}
-                      disabled={qIndex === 0 || mutation.isPending}
-                      title="Mover arriba"
-                    >
-                      <ArrowUpward />
-                    </IconButton>
-                    <IconButton 
-                      size="small" 
-                      onClick={() => moveQuestionDown(qIndex)}
-                      disabled={qIndex === survey.questions.length - 1 || mutation.isPending}
-                      title="Mover abajo"
-                    >
-                      <ArrowDownward />
-                    </IconButton>
                     <IconButton 
                       size="small" 
                       color="error" 
@@ -382,7 +341,7 @@ export default function SurveyForm() {
             <Button 
               variant="outlined" 
               color="secondary"
-              //onClick={onCancel}
+              onClick={() => navigate("/dashboard")}
               disabled={mutation.isPending}
             >
               Cancelar

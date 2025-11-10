@@ -1,4 +1,4 @@
-import { QuestionType } from '../entities/question.entity';
+import { QuestionType } from 'src/common/utils/enums/question-type.enum';
 
 export interface QuestionStats {
   questionId: number;

@@ -9,6 +9,7 @@ import LandingPage from "./pages/LandingPage";
 import SurveyBuilder from "./pages/SurveyBuilder";
 import SignUp from "./pages/SignUp";
 import { AppLayout } from "./layouts";
+import SurveyStatistics from "./pages/Statistics";
 
 export default function App() {
   return (
@@ -34,6 +35,7 @@ export default function App() {
             <AppLayout />
           </PrivateRoute>
         }>
+          <Route path="/surveys/:surveyId/stats" element={<SurveyStatistics />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/surveys/new" element={<SurveyBuilder />} />
           <Route path="/surveys/:id/edit" element={<SurveyEditPage />} />

@@ -1,6 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { User } from 'src/auth/entities/user.entity';
+import { checkIfPasswordMatches } from 'src/common/utils/bcrypt';
 import { EntityManager } from 'typeorm';
 
 @Injectable()
@@ -11,14 +12,28 @@ export class UsersService {
   ) {}
 
   async validateUser(email: string, password: string) {
-    const u = await this.entityManager.findOne(User, {
+    const user = await this.entityManager.findOne(User, {
       where: {
         email,
-        password,
       },
     });
 
-    return u ? { id: u.id, email: u.email, name: u.name } : null;
+    if (!user) {
+      throw new BadRequestException(
+        `No existe usuario con correo electronico ${email}`,
+      );
+    }
+
+    const passwordMatches = await checkIfPasswordMatches(
+      password,
+      user.password,
+    );
+
+    if (user && passwordMatches) {
+      return { id: user.id, email: user.email, name: user.name };
+    } else {
+      return null;
+    }
   }
 
   async findById(id: number) {

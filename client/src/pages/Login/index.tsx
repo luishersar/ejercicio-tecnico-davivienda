@@ -53,13 +53,19 @@ export default function Login() {
            sx={{ mt: 3, py: 1.4, fontWeight: 600 }}
            type="submit"
          >
-           Sign In
+           Inicia Sesion
          </Button>
         </Box>
         
         <Box textAlign="center" mt={1}>
           <Link href="signup" underline="hover" color="primary">
-            Don't have an account? Sign up
+            ¿No tienes una cuenta? Registrate
+          </Link>
+        </Box>
+
+        <Box textAlign="center" mt={1}>
+          <Link href="/" underline="hover" color="primary">
+            Ya tengo un codigo de encuesta
           </Link>
         </Box>
     </PublicLayout>

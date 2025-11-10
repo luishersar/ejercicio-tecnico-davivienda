@@ -3,13 +3,14 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { Survey } from './entities/survey.entity';
 import { CreateSurveyDto } from './dto/create-survey.dto';
-import { Question, QuestionType } from './entities/question.entity';
+import { Question } from './entities/question.entity';
 import { QuestionOption } from './entities/question-option.entity';
 import { UpdateSurveyDto } from './dto/update-survey.dto';
+import { QuestionType } from 'src/common/utils/enums/question-type.enum';
 
 @Injectable()
 export class SurveysService {
@@ -20,13 +21,17 @@ export class SurveysService {
     private questionRepo: Repository<Question>,
     @InjectRepository(QuestionOption)
     private optionRepo: Repository<QuestionOption>,
+
+    @InjectEntityManager()
+    private readonly entityManager: EntityManager,
   ) {}
 
-  async create(dto: CreateSurveyDto) {
+  async create(dto: CreateSurveyDto, userId: string) {
     const survey = this.surveyRepo.create({
       title: dto.title,
       description: dto.description,
       active: true,
+      userId: Number(userId),
     });
 
     survey.questions = dto.questions.map((q) => {
@@ -54,18 +59,28 @@ export class SurveysService {
     return this.surveyRepo.save(survey);
   }
 
-  async findAll() {
-    return this.surveyRepo.find({
+  async findAll(userId: string) {
+    const surveys = await this.surveyRepo.find({
+      where: {
+        userId: Number(userId),
+      },
       relations: {
         questions: {
           options: true,
         },
+        responses: true,
       },
     });
+
+    const responses = surveys
+      .map((e) => e.responses.length)
+      .reduce((acc, curr) => curr + acc, 0);
+
+    return { surveys, responses };
   }
 
   async findOne(id: number) {
-    return this.surveyRepo.findOne({
+    const survey = await this.surveyRepo.findOne({
       where: {
         id,
       },
@@ -75,6 +90,12 @@ export class SurveysService {
         },
       },
     });
+
+    if (!survey) {
+      throw new BadRequestException(`No existe encuesta con id ${id}`);
+    }
+
+    return survey;
   }
 
   async remove(id: number) {

@@ -6,6 +6,7 @@ import {
   ManyToOne,
   OneToMany,
   JoinColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { Survey } from './survey.entity';
 import { Answer } from './answer.entity';
@@ -13,21 +14,30 @@ import { Answer } from './answer.entity';
 @Entity('survey_responses')
 export class SurveyResponse {
   @PrimaryGeneratedColumn()
-  id: string;
+  id: number;
 
-  @Column({ type: 'int', name: 'survey_id' })
+  @Column({ name: 'surveyId' })
   surveyId: number;
 
-  @CreateDateColumn({ name: 'completed_at' })
-  completedAt: Date;
-
-  @Column({ type: 'jsonb', nullable: true, name: 'session_info' })
+  @Column({ type: 'jsonb', nullable: true, name: 'sessionInfo' })
   sessionInfo: Record<string, any>;
+
+  @CreateDateColumn({
+    type: 'timestamptz',
+    default: () => 'current_timestamp',
+  })
+  createdAt: Date;
+
+  @UpdateDateColumn({
+    type: 'timestamptz',
+    default: () => 'current_timestamp',
+  })
+  updatedAt: Date;
 
   @ManyToOne(() => Survey, (survey) => survey.responses, {
     onDelete: 'CASCADE',
   })
-  @JoinColumn({ name: 'survey_id' })
+  @JoinColumn({ name: 'surveyId' })
   survey: Survey;
 
   @OneToMany(() => Answer, (answer) => answer.response)

@@ -5,17 +5,13 @@ import {
   ManyToOne,
   OneToMany,
   JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { Survey } from './survey.entity';
 import { QuestionOption } from './question-option.entity';
 import { Answer } from './answer.entity';
-
-export enum QuestionType {
-  OPEN = 'open',
-  SCALE = 'scale',
-  MULTIPLE_CHOICE_ONE_ANSWER = 'multiple_choice_one_answer',
-  MULTIPLE_CHOICE_MULTIPLE_ANSWER = 'multiple_choice_multiple_answer',
-}
+import { QuestionType } from '../../common/utils/enums/question-type.enum';
 
 @Entity('questions')
 export class Question {
@@ -31,10 +27,22 @@ export class Question {
   @Column({ default: true })
   active: boolean;
 
+  @CreateDateColumn({
+    type: 'timestamptz',
+    default: () => 'current_timestamp',
+  })
+  createdAt: Date;
+
+  @UpdateDateColumn({
+    type: 'timestamptz',
+    default: () => 'current_timestamp',
+  })
+  updatedAt: Date;
+
   @ManyToOne(() => Survey, (survey) => survey.questions, {
     onDelete: 'CASCADE',
   })
-  @JoinColumn({ name: 'survey_id' })
+  @JoinColumn({ name: 'surveyId' })
   survey: Survey;
 
   @OneToMany(() => QuestionOption, (option) => option.question, {

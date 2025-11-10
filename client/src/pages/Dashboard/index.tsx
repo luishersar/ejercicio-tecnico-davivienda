@@ -29,7 +29,8 @@ import {
   Delete as DeleteIcon,
   PollOutlined as PollIcon,
   CheckCircle as CheckCircleIcon,
-  Cancel as CancelIcon
+  Cancel as CancelIcon,
+  ContentCopy as Copy
 } from "@mui/icons-material";
 import { useState } from "react";
 
@@ -40,10 +41,12 @@ export default function Dashboard() {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedSurvey, setSelectedSurvey] = useState<any>(null);
 
-  const { data: surveys, isLoading } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ["getAllSurveys"],
     queryFn: () => getAllSurveys(token!),
   });
+
+  const { surveys = [], responses = 0 } = data ?? {};
 
   const mutation = useMutation({
     mutationFn: (id: number) => softDeleteSurvey(id, token!),
@@ -100,7 +103,6 @@ export default function Dashboard() {
 
   return (
     <Box sx={{ maxWidth: 1400, mx: "auto", p: { xs: 2, md: 4 }, mb: 4 }}>
-      {/* Header mejorado */}
       <Paper 
         elevation={0} 
         sx={{ 
@@ -148,7 +150,6 @@ export default function Dashboard() {
         </Box>
       </Paper>
 
-      {/* Stats resumen */}
       {surveys && surveys.length > 0 && (
         <Grid container spacing={3} sx={{ mb: 4 }}>
           <Grid size={{ xs:12, sm:4 }}>
@@ -193,7 +194,7 @@ export default function Dashboard() {
                 </Avatar>
                 <Box>
                   <Typography variant="h4" fontWeight={700}>
-                    {surveys.reduce((acc: number, s: any) => acc + (s.responses ?? 0), 0)}
+                    {responses}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     Respuestas totales
@@ -205,7 +206,6 @@ export default function Dashboard() {
         </Grid>
       )}
 
-      {/* Grid de encuestas */}
       {surveys && surveys.length > 0 ? (
         <Grid container spacing={3}>
           {surveys.map((survey: any) => (
@@ -237,6 +237,13 @@ export default function Dashboard() {
                       color={survey.active ? "success" : "default"}
                       sx={{ fontWeight: 600 }}
                     />
+                    {survey.active && <Chip
+                      icon={<Copy />}
+                      label={`Comparte el codigo: ${survey.id}`}
+                      size="small"
+                      color={"default"}
+                      sx={{ fontWeight: 600 }}
+                    />}
                     <IconButton
                       size="small"
                       onClick={(e) => handleOpenMenu(e, survey)}
@@ -250,7 +257,6 @@ export default function Dashboard() {
                     </IconButton>
                   </Box>
 
-                  {/* Título */}
                   <Typography 
                     variant="h6" 
                     fontWeight={600} 
@@ -268,14 +274,13 @@ export default function Dashboard() {
                     {survey.title}
                   </Typography>
 
-                  {/* Estadísticas */}
                   <Stack spacing={1.5}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <Typography variant="body2" color="text.secondary">
                         Respuestas
                       </Typography>
                       <Chip 
-                        label={survey.responses ?? 0} 
+                        label={survey.responses.length ?? 0} 
                         size="small" 
                         sx={{ 
                           bgcolor: alpha('#1976d2', 0.1),
@@ -291,7 +296,7 @@ export default function Dashboard() {
                           Preguntas
                         </Typography>
                         <Chip 
-                          label={survey.questions.length ?? 0}
+                          label={survey.questions.filter((q: any) => q.active).length ?? 0}
                           size="small"
                           sx={{ 
                             bgcolor: alpha('#2e7d32', 0.1),
@@ -343,7 +348,6 @@ export default function Dashboard() {
         </Paper>
       )}
 
-      {/* Menú de opciones */}
       <Menu
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
@@ -373,7 +377,7 @@ export default function Dashboard() {
             sx={{ py: 1.5, color: 'error.main' }}
           >
             <DeleteIcon sx={{ mr: 1.5, fontSize: 20 }} />
-            Eliminar
+            Inactivar
           </MenuItem>
         )}
       </Menu>

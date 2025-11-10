@@ -8,9 +8,10 @@ import { Repository, In } from 'typeorm';
 import { SurveyResponse } from '../entities/survey-response.entity';
 import { Answer } from '../entities/answer.entity';
 import { Survey } from '../entities/survey.entity';
-import { Question, QuestionType } from '../entities/question.entity';
+import { Question } from '../entities/question.entity';
 import { SubmitSurveyDTO } from '../dto/submit-survey.dto';
 import { QuestionStats } from '../types/question-stats.type';
+import { QuestionType } from 'src/common/utils/enums/question-type.enum';
 
 @Injectable()
 export class SurveyAnswerService {
@@ -81,7 +82,7 @@ export class SurveyAnswerService {
       this.answerRepo.create({
         responseId: savedResponse.id,
         questionId: response.questionId,
-        answerValue: this.serializeAnswer(response.answer),
+        value: this.serializeAnswer(response.answer),
       }),
     );
 
@@ -97,23 +98,20 @@ export class SurveyAnswerService {
     const responses = await this.surveyResponseRepo.find({
       where: { surveyId },
       relations: ['answers', 'answers.question'],
-      order: { completedAt: 'DESC' },
+      order: { createdAt: 'DESC' },
     });
 
     return responses.map((response) => ({
       id: response.id,
       surveyId: response.surveyId,
-      completedAt: response.completedAt,
       sessionInfo: response.sessionInfo,
+      createdAt: response.createdAt,
       answers: response.answers.map((answer: Answer) => ({
         id: answer.id,
         questionId: answer.questionId,
         questionLabel: answer.question.label,
         questionType: answer.question.type,
-        answer: this.deserializeAnswer(
-          answer.answerValue,
-          answer.question.type,
-        ),
+        answer: this.deserializeAnswer(answer.value, answer.question.type),
       })),
     }));
   }
@@ -136,7 +134,7 @@ export class SurveyAnswerService {
 
     const stats = questions.map((question) => {
       const answers = question.answers.map((a) =>
-        this.deserializeAnswer(a.answerValue, question.type),
+        this.deserializeAnswer(a.value, question.type),
       );
 
       const questionStats: QuestionStats = {
@@ -230,7 +228,7 @@ export class SurveyAnswerService {
     };
   }
 
-  async getResponseById(responseId: string) {
+  async getResponseById(responseId: number) {
     const response = await this.surveyResponseRepo.findOne({
       where: { id: responseId },
       relations: ['answers', 'answers.question'],
@@ -241,16 +239,12 @@ export class SurveyAnswerService {
     return {
       id: response.id,
       surveyId: response.surveyId,
-      completedAt: response.completedAt,
       sessionInfo: response.sessionInfo,
       answers: response.answers.map((answer: Answer) => ({
         questionId: answer.questionId,
         questionLabel: answer.question.label,
         questionType: answer.question.type,
-        answer: this.deserializeAnswer(
-          answer.answerValue,
-          answer.question.type,
-        ),
+        answer: this.deserializeAnswer(answer.value, answer.question.type),
       })),
     };
   }
@@ -264,7 +258,7 @@ export class SurveyAnswerService {
     headers.push(...questions);
 
     const rows = responses.map((resp) => {
-      const row = [resp.id, resp.completedAt.toISOString()];
+      const row = [resp.id, resp.createdAt.toISOString()];
       resp.answers.forEach((answer) => {
         const val = Array.isArray(answer.answer)
           ? answer.answer.join('; ')

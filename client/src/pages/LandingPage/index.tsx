@@ -1,6 +1,7 @@
 import { Box, Typography, Button, Grid, Paper, Divider } from "@mui/material";
 import { Link as RouterLink } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import SearchSurveyById from "../../components/SearchSurveyById";
 
 export default function LandingPage() {
   const { user, loading } = useAuth();
@@ -64,6 +65,7 @@ export default function LandingPage() {
               Ir al Dashboard
             </Button>
           </Box>
+          <SearchSurveyById />
         </Paper>
       </Grid>
     </Grid>

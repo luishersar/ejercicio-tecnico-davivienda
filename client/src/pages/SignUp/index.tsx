@@ -1,20 +1,21 @@
 import React, { useState } from 'react'
 import PublicLayout from '../../layouts/PublicLayout'
 import { Box, Button, Divider, Link, TextField, Typography } from '@mui/material'
-import { signUp } from '../../http/auth';
 import toast from 'react-hot-toast';
+import { useAuth } from '../../context/AuthContext';
  
 const SignUp = () => {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading,setIsLoading] = useState(false);
- 
+  const { signUp } = useAuth()
+
    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
       setIsLoading(true)
-      await signUp({email, password, name});
+      await signUp(email, password, name);
       toast.success("User created successfully");
       setIsLoading(false)
     } catch (err: any) {

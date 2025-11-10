@@ -21,7 +21,7 @@ import {
   Divider,
 } from "@mui/material";
 import { useState, useEffect } from "react";
-import { Delete, Add, ArrowUpward, ArrowDownward } from "@mui/icons-material";
+import { Delete, Add } from "@mui/icons-material";
 import { useAuth } from "../../context/AuthContext.tsx";
 import toast from "react-hot-toast";
 
@@ -179,30 +179,6 @@ export default function SurveyEditPage() {
     }));
   };
 
-  const moveQuestionUp = (index: number) => {
-    if (index === 0) return;
-    setSurveyData((prev: any) => {
-      const newQuestions = [...prev.questions];
-      [newQuestions[index], newQuestions[index - 1]] = [
-        newQuestions[index - 1],
-        newQuestions[index],
-      ];
-      return { ...prev, questions: newQuestions };
-    });
-  };
-
-  const moveQuestionDown = (index: number) => {
-    if (index === surveyData.questions.length - 1) return;
-    setSurveyData((prev: any) => {
-      const newQuestions = [...prev.questions];
-      [newQuestions[index], newQuestions[index + 1]] = [
-        newQuestions[index + 1],
-        newQuestions[index],
-      ];
-      return { ...prev, questions: newQuestions };
-    });
-  };
-
   const handleSave = () => {
     const payload = {
       title: surveyData.title,
@@ -242,7 +218,6 @@ export default function SurveyEditPage() {
           Editar Encuesta
         </Typography>
 
-        {/* Switch para activar/desactivar */}
         <FormControlLabel
           control={
             <Switch
@@ -264,7 +239,6 @@ export default function SurveyEditPage() {
           sx={{ mb: 3 }}
         />
 
-        {/* Información básica */}
         <Stack spacing={3} mb={4}>
           <TextField
             fullWidth
@@ -290,7 +264,6 @@ export default function SurveyEditPage() {
 
         <Divider sx={{ my: 3 }} />
 
-        {/* Preguntas */}
         <Typography variant="h6" fontWeight={600} mb={2}>
           Preguntas
         </Typography>
@@ -304,22 +277,6 @@ export default function SurveyEditPage() {
                 </Typography>
 
                 <Box>
-                  <IconButton
-                    size="small"
-                    onClick={() => moveQuestionUp(qIdx)}
-                    disabled={qIdx === 0}
-                    title="Mover arriba"
-                  >
-                    <ArrowUpward />
-                  </IconButton>
-                  <IconButton
-                    size="small"
-                    onClick={() => moveQuestionDown(qIdx)}
-                    disabled={qIdx === surveyData.questions.length - 1}
-                    title="Mover abajo"
-                  >
-                    <ArrowDownward />
-                  </IconButton>
                   <IconButton
                     size="small"
                     color="error"
@@ -358,7 +315,6 @@ export default function SurveyEditPage() {
                   </Select>
                 </FormControl>
 
-                {/* Opciones */}
                 {needsOptions(q.type) && (
                   <Box
                     sx={{
@@ -428,7 +384,6 @@ export default function SurveyEditPage() {
 
         <Divider sx={{ my: 3 }} />
 
-        {/* Botones de acción */}
         <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}>
           <Button variant="outlined" color="secondary" onClick={() => navigate("/dashboard")}>
             Cancelar

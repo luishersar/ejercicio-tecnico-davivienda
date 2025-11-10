@@ -29,7 +29,10 @@ export async function getAllSurveys(token: string) {
     headers: { Authorization: `Bearer ${token}` },
   });
 
-  return res.data;
+    const surveys = res.data.surveys
+    const responses = res.data.responses
+
+  return {surveys, responses};
 }
 
 export async function createSurvey(payload: CreateSurveyPayload, token: string) {
@@ -53,7 +56,6 @@ export const updateSurvey = async (id: string, payload: any, token: string) => {
 };
 
 export const softDeleteSurvey = async (id: number, token: string) => {
-    console.log(token)
   const { data } = await http.delete(`/surveys/${id}/soft-delete`, {
     headers: {
       Authorization: `Bearer ${token}`,
